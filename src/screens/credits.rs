@@ -22,7 +22,10 @@ fn spawn_credits_screen(mut commands: Commands) {
             children.label("Jane Doe - Made the music for the alien invasion");
 
             children.header("Assets");
-            children.label("Bevy logo - All rights reserved by the Bevy Foundation. Permission granted for splash screen use when unmodified.");
+            children.label(
+                "Bevy logo - All rights reserved by the Bevy Foundation. Permission granted for \
+                 splash screen use when unmodified.",
+            );
             children.label("Ducky sprite - CC0 by Caz Creates Games");
             children.label("Button SFX - CC0 by Jaszunio15");
             children.label("Music - CC BY 3.0 by Kevin MacLeod");

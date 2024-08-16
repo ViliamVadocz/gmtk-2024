@@ -40,14 +40,11 @@ impl<T: Spawn> Widgets for T {
         entity.with_children(|children| {
             children.spawn((
                 Name::new("Button Text"),
-                TextBundle::from_section(
-                    text,
-                    TextStyle {
-                        font_size: 40.0,
-                        color: BUTTON_TEXT,
-                        ..default()
-                    },
-                ),
+                TextBundle::from_section(text, TextStyle {
+                    font_size: 40.0,
+                    color: BUTTON_TEXT,
+                    ..default()
+                }),
             ));
         });
 
@@ -55,31 +52,25 @@ impl<T: Spawn> Widgets for T {
     }
 
     fn header(&mut self, text: impl Into<String>) -> EntityCommands {
-        let mut entity = self.spawn((
-            Name::new("Header"),
-            NodeBundle {
-                style: Style {
-                    width: Px(500.0),
-                    height: Px(65.0),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    ..default()
-                },
-                background_color: BackgroundColor(NODE_BACKGROUND),
+        let mut entity = self.spawn((Name::new("Header"), NodeBundle {
+            style: Style {
+                width: Px(500.0),
+                height: Px(65.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
                 ..default()
             },
-        ));
+            background_color: BackgroundColor(NODE_BACKGROUND),
+            ..default()
+        }));
         entity.with_children(|children| {
             children.spawn((
                 Name::new("Header Text"),
-                TextBundle::from_section(
-                    text,
-                    TextStyle {
-                        font_size: 40.0,
-                        color: HEADER_TEXT,
-                        ..default()
-                    },
-                ),
+                TextBundle::from_section(text, TextStyle {
+                    font_size: 40.0,
+                    color: HEADER_TEXT,
+                    ..default()
+                }),
             ));
         });
         entity
@@ -88,14 +79,11 @@ impl<T: Spawn> Widgets for T {
     fn label(&mut self, text: impl Into<String>) -> EntityCommands {
         let entity = self.spawn((
             Name::new("Label"),
-            TextBundle::from_section(
-                text,
-                TextStyle {
-                    font_size: 24.0,
-                    color: LABEL_TEXT,
-                    ..default()
-                },
-            )
+            TextBundle::from_section(text, TextStyle {
+                font_size: 24.0,
+                color: LABEL_TEXT,
+                ..default()
+            })
             .with_style(Style {
                 width: Px(500.0),
                 ..default()
@@ -114,22 +102,19 @@ pub trait Containers {
 
 impl Containers for Commands<'_, '_> {
     fn ui_root(&mut self) -> EntityCommands {
-        self.spawn((
-            Name::new("UI Root"),
-            NodeBundle {
-                style: Style {
-                    width: Percent(100.0),
-                    height: Percent(100.0),
-                    justify_content: JustifyContent::Center,
-                    align_items: AlignItems::Center,
-                    flex_direction: FlexDirection::Column,
-                    row_gap: Px(10.0),
-                    position_type: PositionType::Absolute,
-                    ..default()
-                },
+        self.spawn((Name::new("UI Root"), NodeBundle {
+            style: Style {
+                width: Percent(100.0),
+                height: Percent(100.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                flex_direction: FlexDirection::Column,
+                row_gap: Px(10.0),
+                position_type: PositionType::Absolute,
                 ..default()
             },
-        ))
+            ..default()
+        }))
     }
 }
 

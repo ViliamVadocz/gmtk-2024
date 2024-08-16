@@ -27,8 +27,9 @@ pub struct InteractionPalette {
     pub pressed: Color,
 }
 
-/// Event triggered on a UI entity when the [`Interaction`] component on the same entity changes to
-/// [`Interaction::Pressed`]. Observe this event to detect e.g. button presses.
+/// Event triggered on a UI entity when the [`Interaction`] component on the
+/// same entity changes to [`Interaction::Pressed`]. Observe this event to
+/// detect e.g. button presses.
 #[derive(Event)]
 pub struct OnPress;
 

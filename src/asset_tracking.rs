@@ -8,9 +8,10 @@ pub(super) fn plugin(app: &mut App) {
 }
 
 pub trait LoadResource {
-    /// This will load the [`Resource`] as an [`Asset`]. When all of its asset dependencies
-    /// have been loaded, it will be inserted as a resource. This ensures that the resource only
-    /// exists when the assets are ready.
+    /// This will load the [`Resource`] as an [`Asset`]. When all of its asset
+    /// dependencies have been loaded, it will be inserted as a resource.
+    /// This ensures that the resource only exists when the assets are
+    /// ready.
     fn load_resource<T: Resource + Asset + Clone + FromWorld>(&mut self) -> &mut Self;
 }
 

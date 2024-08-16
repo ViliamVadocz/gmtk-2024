@@ -11,8 +11,8 @@ pub(super) fn plugin(_app: &mut App) {
 }
 
 /// A [`Command`] to spawn the level.
-/// Functions that accept only `&mut World` as their parameter implement [`Command`].
-/// We use this style when a command requires no configuration.
+/// Functions that accept only `&mut World` as their parameter implement
+/// [`Command`]. We use this style when a command requires no configuration.
 pub fn spawn_level(world: &mut World) {
     // The only thing we have in our level is a player,
     // but add things like walls etc. here.
