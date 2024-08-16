@@ -5,9 +5,9 @@ use bevy::prelude::*;
 ///
 /// This can then be used to query for and operate on sounds in that category. For example:
 ///
-/// ```
+/// ```no_run
 /// use bevy::prelude::*;
-/// use bevy_quickstart::audio::Music;
+/// use gmtk_2024::audio::Music;
 ///
 /// fn set_music_volume(sink_query: Query<&AudioSink, With<Music>>) {
 ///     for sink in &sink_query {
@@ -23,9 +23,9 @@ pub struct Music;
 ///
 /// This can then be used to query for and operate on sounds in that category. For example:
 ///
-/// ```
+/// ```no_run
 /// use bevy::prelude::*;
-/// use bevy_quickstart::audio::SoundEffect;
+/// use gmtk_2024::audio::SoundEffect;
 ///
 /// fn set_sound_effect_volume(sink_query: Query<&AudioSink, With<SoundEffect>>) {
 ///     for sink in &sink_query {
