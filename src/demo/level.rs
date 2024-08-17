@@ -8,6 +8,8 @@ use bevy::{
 use bevy_ecs_tilemap::prelude::*;
 
 use crate::{asset_tracking::LoadResource, demo::player::SpawnPlayer, AppSet};
+use super::player::PlayerState;
+use crate::{demo::player::SpawnPlayer, AppSet};
 
 pub(super) fn plugin(app: &mut App) {
     // No setup required for this plugin.
@@ -181,19 +183,27 @@ impl WorldGrid {
 #[derive(Component)]
 pub struct GridTransform(pub IVec2);
 
-#[derive(Component)]
-pub struct OldGridTransform(pub Vec<IVec2>);
-
 fn propagate_grid_transform(
-    mut q: Query<(&mut Transform, &GridTransform, &OldGridTransform)>,
+    mut q: Query<(
+        &mut Transform,
+        &GridTransform,
+        &PlayerState,
+        &mut TextureAtlas,
+        &mut Sprite,
+    )>,
     grid: Res<WorldGrid>,
     tick: Res<GridTick>,
 ) {
-    for (mut transform, new, old) in &mut q {
-        let old = grid.project_to_world(*old.0.last().unwrap_or(&new.0));
-        let new = grid.project_to_world(new.0);
-        let interpolated = old.lerp(new, tick.0.fraction());
-        transform.translation = interpolated.extend(transform.translation.z);
+    for (mut transform, pos, state, mut atlas, mut sprite) in &mut q {
+        if let Some(anim) = &state.animation {
+            let (offset, frame) = (anim.func)(tick.0.fraction());
+            atlas.index = frame.get_atlas_index();
+            let old = grid.project_to_world(pos.0);
+            transform.translation = (old + offset).extend(transform.translation.z);
+        } else {
+            transform.translation = grid.project_to_world(pos.0).extend(transform.translation.z);
+        }
+        sprite.flip_x = state.x_dir == -1;
     }
 }
 

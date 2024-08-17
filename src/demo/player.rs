@@ -8,13 +8,11 @@ use bevy::{
     render::texture::{ImageLoaderSettings, ImageSampler},
 };
 
-use super::level::{GridTick, GridTransform, Level, NextTick, OldGridTransform};
-use crate::{
-    asset_tracking::LoadResource,
-    demo::animation::PlayerAnimation,
-    screens::Screen,
-    AppSet,
+use super::{
+    action::{Animation, PlayerAction},
+    level::{GridTick, GridTransform, Level, NextTick},
 };
+use crate::{asset_tracking::LoadResource, screens::Screen, AppSet};
 
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<Player>();
@@ -47,6 +45,13 @@ impl Command for SpawnPlayer {
     }
 }
 
+#[derive(Component)]
+pub struct PlayerState {
+    // can be 1 or -1
+    pub x_dir: i32,
+    pub animation: Option<Animation>,
+}
+
 fn spawn_player(
     In(config): In<SpawnPlayer>,
     mut commands: Commands,
@@ -61,7 +66,6 @@ fn spawn_player(
     // this example: https://github.com/bevyengine/bevy/blob/latest/examples/2d/texture_atlas.rs
     let layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 6, 2, Some(UVec2::splat(1)), None);
     let texture_atlas_layout = texture_atlas_layouts.add(layout);
-    let player_animation = PlayerAnimation::new();
 
     commands.spawn((
         Name::new("Player"),
@@ -72,12 +76,14 @@ fn spawn_player(
             ..Default::default()
         },
         GridTransform(level.get_spawn()),
-        OldGridTransform(vec![]),
+        PlayerState {
+            x_dir: 1,
+            animation: None,
+        },
         TextureAtlas {
             layout: texture_atlas_layout.clone(),
-            index: player_animation.get_atlas_index(),
+            index: 0,
         },
-        player_animation,
         StateScoped(Screen::Gameplay),
     ));
 }
@@ -85,45 +91,49 @@ fn spawn_player(
 fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
     mut tick: ResMut<GridTick>,
-    mut pos: Query<(&mut GridTransform, &mut OldGridTransform), With<Player>>,
+    mut player: Query<(&mut GridTransform, &mut PlayerState), With<Player>>,
     mut next_tick: EventWriter<NextTick>,
+    level: Res<Level>,
 ) {
-    if input.just_pressed(KeyCode::Backspace) {
-        for (mut new, mut old) in &mut pos {
-            if let Some(old) = old.0.pop() {
-                new.0 = old;
-            }
-        }
-
-        let end = tick.0.duration();
-        tick.0.set_elapsed(end);
+    let Ok((mut pos, mut state)) = player.get_single_mut() else {
         return;
+    };
+
+    if !tick.0.finished() {
+        return;
+    }
+    if let Some(prev_anim) = state.animation.take() {
+        pos.0 += prev_anim.destination;
     }
 
     let pressed_or_held =
         |key: KeyCode| tick.0.finished() && input.pressed(key) || input.just_pressed(key);
 
     // Collect directional input.
-    let mut intent = IVec2::ZERO;
-    if input.pressed(KeyCode::KeyW) || input.pressed(KeyCode::ArrowUp) {
-        intent.y += 1;
-    }
-    if input.pressed(KeyCode::KeyS) || input.pressed(KeyCode::ArrowDown) {
-        intent.y -= 1;
-    }
+    let mut action = None;
+
+    let mut facing = 0;
     if pressed_or_held(KeyCode::KeyA) || pressed_or_held(KeyCode::ArrowLeft) {
-        intent.x -= 1;
+        facing -= 1;
     }
     if pressed_or_held(KeyCode::KeyD) || pressed_or_held(KeyCode::ArrowRight) {
-        intent.x += 1;
+        facing += 1;
     }
-    if intent.x != 0 {
-        for (mut new, mut old) in &mut pos {
-            old.0.push(new.0);
-            new.0 += intent;
-        }
+    if facing != 0 {
+        state.x_dir = facing;
+        action = Some(PlayerAction::Walk)
+    }
+    if pressed_or_held(KeyCode::KeyW) || pressed_or_held(KeyCode::ArrowUp) {
+        action = Some(PlayerAction::Climb)
+    }
+    if let Some(action) = action {
+        let Some(animation) = level.check_valid(pos.0, action, state.x_dir) else {
+            return;
+        };
 
         tick.0.reset();
+        tick.0.set_duration(animation.duration);
+        state.animation = Some(animation);
         next_tick.send(NextTick);
     }
 }
