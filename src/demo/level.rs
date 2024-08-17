@@ -7,8 +7,8 @@ use bevy::{
 };
 use bevy_ecs_tilemap::prelude::*;
 
-use crate::{asset_tracking::LoadResource, demo::player::SpawnPlayer, AppSet};
 use super::player::PlayerState;
+use crate::{asset_tracking::LoadResource, demo::player::SpawnPlayer, AppSet};
 
 pub(super) fn plugin(app: &mut App) {
     // No setup required for this plugin.
@@ -156,9 +156,14 @@ impl Level {
         self.get_terrain(pos).unwrap_or_default()
     }
 
+    fn height(&self) -> usize {
+        self.terrain.len() / self.row_size
+    }
+
     fn get_terrain(&self, pos: IVec2) -> Option<bool> {
+        let y = self.height() - 1 - usize::try_from(pos.y).ok()?;
         self.terrain
-            .get(self.row_size * usize::try_from(pos.y).ok()? + usize::try_from(pos.x).ok()?)
+            .get(self.row_size * y + usize::try_from(pos.x).ok()?)
             .copied()
     }
 
@@ -195,12 +200,14 @@ fn propagate_grid_transform(
 ) {
     for (mut transform, pos, state, mut atlas, mut sprite) in &mut q {
         if let Some(anim) = &state.animation {
-            let (offset, frame) = (anim.func)(tick.0.fraction());
-            atlas.index = frame.get_atlas_index();
-            let new = grid.project_to_world(pos.0.as_vec2() + offset);
+            let frame = (anim.func)(tick.0.fraction());
+            atlas.index = frame.state.get_atlas_index();
+            let new = grid.project_to_world(pos.0.as_vec2() + frame.offset(state.x_dir));
             transform.translation = new.extend(transform.translation.z);
         } else {
-            transform.translation = grid.project_to_world(pos.0.as_vec2()).extend(transform.translation.z);
+            transform.translation = grid
+                .project_to_world(pos.0.as_vec2())
+                .extend(transform.translation.z);
         }
         sprite.flip_x = state.x_dir == -1;
     }

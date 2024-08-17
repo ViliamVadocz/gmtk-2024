@@ -19,14 +19,32 @@ impl Level {
             .squares()
             .all(|square| !self.is_solid(pos + square * IVec2::new(x_dir, 1)))
             .then(|| action.animation())
+            .filter(|anim| self.is_solid(pos + anim.final_offset(x_dir) + DOWN))
     }
 }
 
 pub struct Animation {
-    pub destination: IVec2,
+    final_offset: IVec2,
     pub duration: Duration,
     // returns
-    pub func: Box<dyn Fn(f32) -> (Vec2, PlayerAnimationState) + Send + Sync>,
+    pub func: Box<dyn Fn(f32) -> AnimationFrame + Send + Sync>,
+}
+
+pub struct AnimationFrame {
+    pub state: PlayerAnimationState,
+    offset: Vec2,
+}
+
+impl AnimationFrame {
+    pub fn offset(&self, x_dir: i32) -> Vec2 {
+        self.offset * Vec2::new(x_dir as f32, 1.)
+    }
+}
+
+impl Animation {
+    pub fn final_offset(&self, x_dir: i32) -> IVec2 {
+        self.final_offset * IVec2::new(x_dir, 1)
+    }
 }
 
 impl PlayerAction {
@@ -43,23 +61,19 @@ impl PlayerAction {
     pub fn animation(&self) -> Animation {
         match self {
             PlayerAction::Walk => Animation {
-                destination: RIGHT,
+                final_offset: RIGHT,
                 duration: Duration::from_secs_f32(0.2),
-                func: Box::new(|f| {
-                    (
-                        RIGHT.as_vec2() * f,
-                        PlayerAnimationState::Walking((f * 6.) as usize),
-                    )
+                func: Box::new(|f| AnimationFrame {
+                    offset: RIGHT.as_vec2() * f,
+                    state: PlayerAnimationState::Walking((f * 6.) as usize),
                 }),
             },
             PlayerAction::Climb => Animation {
-                destination: UP + RIGHT,
+                final_offset: UP + RIGHT,
                 duration: Duration::from_secs_f32(0.5),
-                func: Box::new(|f| {
-                    (
-                        RIGHT.as_vec2() * f,
-                        PlayerAnimationState::Walking((f * 6.) as usize),
-                    )
+                func: Box::new(|f| AnimationFrame {
+                    offset: (RIGHT + UP).as_vec2() * f,
+                    state: PlayerAnimationState::Walking((f * 6.) as usize),
                 }),
             },
         }
