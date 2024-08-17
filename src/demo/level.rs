@@ -35,7 +35,7 @@ pub fn spawn_level(world: &mut World) {
 
 #[derive(Resource, Reflect, Debug)]
 #[reflect(Resource)]
-struct Level {
+pub struct Level {
     terrain: Vec<bool>,
     row_size: usize,
     spawn: (usize, usize),
