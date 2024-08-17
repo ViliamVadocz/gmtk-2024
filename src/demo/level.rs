@@ -26,7 +26,7 @@ pub(super) fn plugin(app: &mut App) {
     });
     app.add_event::<NextTick>();
     app.insert_resource(GridTick(Timer::from_seconds(0.2, TimerMode::Once)));
-    // app.init_resource::<Level>();
+    app.init_resource::<Level>();
     app.load_resource::<LevelAssets>();
 }
 
