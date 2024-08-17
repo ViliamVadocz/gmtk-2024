@@ -7,20 +7,13 @@ use bevy::{
 };
 use bevy_ecs_tilemap::prelude::*;
 
-use super::player::PlayerState;
 use crate::{asset_tracking::LoadResource, demo::player::SpawnPlayer, AppSet};
 
 pub(super) fn plugin(app: &mut App) {
     // No setup required for this plugin.
     // It's still good to have a function here so that we can add some setup
     // later if needed.
-    app.add_systems(
-        Update,
-        (
-            update_tick_timer.in_set(AppSet::TickTimers),
-            propagate_grid_transform.in_set(AppSet::PropagateGridTransform),
-        ),
-    );
+    app.add_systems(Update, update_tick_timer.in_set(AppSet::TickTimers));
     app.insert_resource(WorldGrid {
         origin: Vec2::splat(0.),
         size: Vec2::splat(50.),
@@ -186,32 +179,6 @@ impl WorldGrid {
 
 #[derive(Component)]
 pub struct GridTransform(pub IVec2);
-
-fn propagate_grid_transform(
-    mut q: Query<(
-        &mut Transform,
-        &GridTransform,
-        &PlayerState,
-        &mut TextureAtlas,
-        &mut Sprite,
-    )>,
-    grid: Res<WorldGrid>,
-    tick: Res<GridTick>,
-) {
-    for (mut transform, pos, state, mut atlas, mut sprite) in &mut q {
-        if let Some(anim) = &state.animation {
-            let frame = (anim.func)(tick.0.fraction());
-            atlas.index = frame.state.get_atlas_index();
-            let new = grid.project_to_world(pos.0.as_vec2() + frame.offset(state.x_dir));
-            transform.translation = new.extend(transform.translation.z);
-        } else {
-            transform.translation = grid
-                .project_to_world(pos.0.as_vec2())
-                .extend(transform.translation.z);
-        }
-        sprite.flip_x = state.x_dir == -1;
-    }
-}
 
 #[derive(Resource)]
 pub struct GridTick(pub Timer);

@@ -6,7 +6,18 @@
 
 use bevy::prelude::*;
 
-pub(super) fn plugin(app: &mut App) {}
+use super::{
+    level::{GridTick, GridTransform, WorldGrid},
+    player::PlayerState,
+};
+use crate::AppSet;
+
+pub(super) fn plugin(app: &mut App) {
+    app.add_systems(
+        Update,
+        propagate_grid_transform.in_set(AppSet::PropagateGridTransform),
+    );
+}
 
 #[derive(Reflect, PartialEq, Clone, Copy)]
 pub enum PlayerAnimationState {
@@ -21,5 +32,31 @@ impl PlayerAnimationState {
             Self::Idling(frame) => frame,
             Self::Walking(frame) => 6 + frame,
         }
+    }
+}
+
+fn propagate_grid_transform(
+    mut q: Query<(
+        &mut Transform,
+        &GridTransform,
+        &PlayerState,
+        &mut TextureAtlas,
+        &mut Sprite,
+    )>,
+    grid: Res<WorldGrid>,
+    tick: Res<GridTick>,
+) {
+    for (mut transform, pos, state, mut atlas, mut sprite) in &mut q {
+        if let Some(anim) = &state.animation {
+            let frame = (anim.func)(tick.0.fraction());
+            atlas.index = frame.state.get_atlas_index();
+            let new = grid.project_to_world(pos.0.as_vec2() + frame.offset(state.x_dir));
+            transform.translation = new.extend(transform.translation.z);
+        } else {
+            transform.translation = grid
+                .project_to_world(pos.0.as_vec2())
+                .extend(transform.translation.z);
+        }
+        sprite.flip_x = state.x_dir == -1;
     }
 }
