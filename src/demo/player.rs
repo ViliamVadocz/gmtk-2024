@@ -157,18 +157,24 @@ pub struct PlayerAssets {
     pub idle_atlas: Handle<TextureAtlasLayout>,
 
     #[dependency]
+    pub walk_texture: Handle<Image>,
+    // #[dependency]
+    pub walk_atlas: Handle<TextureAtlasLayout>,
+
+    #[dependency]
     pub climb_texture: Handle<Image>,
     // #[dependency]
     pub climb_atlas: Handle<TextureAtlasLayout>,
 
     #[dependency]
-    pub walk_texture: Handle<Image>,
+    pub drop_texture: Handle<Image>,
     // #[dependency]
-    pub walk_atlas: Handle<TextureAtlasLayout>,
+    pub drop_atlas: Handle<TextureAtlasLayout>,
 }
 
 impl PlayerAssets {
     pub const PATH_CLIMB: &'static str = "images/climb.png";
+    pub const PATH_DROP: &'static str = "images/drop.png";
     pub const PATH_IDLE: &'static str = "images/idle.png";
     pub const PATH_WALK: &'static str = "images/walk.png";
 }
@@ -185,6 +191,7 @@ impl FromWorld for PlayerAssets {
         let idle_texture = assets.load_with_settings(PlayerAssets::PATH_IDLE, settings);
         let walk_texture = assets.load_with_settings(PlayerAssets::PATH_WALK, settings);
         let climb_texture = assets.load_with_settings(PlayerAssets::PATH_CLIMB, settings);
+        let drop_texture = assets.load_with_settings(PlayerAssets::PATH_DROP, settings);
 
         // A texture atlas is a way to split one image with a grid into multiple
         // sprites. By attaching it to a [`SpriteBundle`] and providing an index, we
@@ -209,19 +216,28 @@ impl FromWorld for PlayerAssets {
         ));
         let climb_atlas = texture_atlas_layouts.add(TextureAtlasLayout::from_grid(
             UVec2::splat(32),
-            3,
             4,
+            3,
+            None,
+            None,
+        ));
+        let drop_atlas = texture_atlas_layouts.add(TextureAtlasLayout::from_grid(
+            UVec2::splat(32),
+            4,
+            3,
             None,
             None,
         ));
 
         Self {
             idle_texture,
-            walk_texture,
-            climb_texture,
             idle_atlas,
+            walk_texture,
             walk_atlas,
+            climb_texture,
             climb_atlas,
+            drop_texture,
+            drop_atlas,
         }
     }
 }
