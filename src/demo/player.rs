@@ -84,9 +84,8 @@ fn record_player_directional_input(
     mut pos: Query<(&mut GridTransform, &mut OldGridTransform), With<Player>>,
     mut next_tick: EventWriter<NextTick>,
 ) {
-    if !tick.0.finished() {
-        return;
-    }
+    let pressed_or_held =
+        |key: KeyCode| tick.0.finished() && input.pressed(key) || input.just_pressed(key);
 
     // Collect directional input.
     let mut intent = IVec2::ZERO;
@@ -96,13 +95,13 @@ fn record_player_directional_input(
     if input.pressed(KeyCode::KeyS) || input.pressed(KeyCode::ArrowDown) {
         intent.y -= 1;
     }
-    if input.pressed(KeyCode::KeyA) || input.pressed(KeyCode::ArrowLeft) {
+    if pressed_or_held(KeyCode::KeyA) || pressed_or_held(KeyCode::ArrowLeft) {
         intent.x -= 1;
     }
-    if input.pressed(KeyCode::KeyD) || input.pressed(KeyCode::ArrowRight) {
+    if pressed_or_held(KeyCode::KeyD) || pressed_or_held(KeyCode::ArrowRight) {
         intent.x += 1;
     }
-    if intent != IVec2::ZERO {
+    if intent.x != 0 {
         for (mut new, mut old) in &mut pos {
             old.0 = new.0;
             new.0 += intent;
