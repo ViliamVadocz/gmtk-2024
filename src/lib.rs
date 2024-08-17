@@ -24,6 +24,7 @@ impl Plugin for AppPlugin {
                 AppSet::RecordInput,
                 AppSet::Update,
                 AppSet::PropagateGridTransform,
+                AppSet::UpdateCamera,
             )
                 .chain(),
         );
@@ -86,6 +87,7 @@ enum AppSet {
     /// Do everything else (consider splitting this into further variants).
     Update,
     PropagateGridTransform,
+    UpdateCamera,
 }
 
 fn spawn_camera(mut commands: Commands) {

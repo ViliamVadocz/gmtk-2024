@@ -81,6 +81,10 @@ impl Level {
             .get(self.row_size * usize::try_from(pos.y).ok()? + usize::try_from(pos.x).ok()?)
             .copied()
     }
+
+    pub fn get_spawn(&self) -> IVec2 {
+        IVec2::new(self.spawn.0 as i32, self.spawn.1 as i32)
+    }
 }
 
 #[derive(Resource)]

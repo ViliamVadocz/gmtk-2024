@@ -8,7 +8,7 @@ use bevy::{
     render::texture::{ImageLoaderSettings, ImageSampler},
 };
 
-use super::level::{GridTick, GridTransform, NextTick, OldGridTransform};
+use super::level::{GridTick, GridTransform, Level, NextTick, OldGridTransform};
 use crate::{
     asset_tracking::LoadResource,
     demo::animation::PlayerAnimation,
@@ -23,7 +23,10 @@ pub(super) fn plugin(app: &mut App) {
     // Record directional input as movement controls.
     app.add_systems(
         Update,
-        record_player_directional_input.in_set(AppSet::RecordInput),
+        (
+            record_player_directional_input.in_set(AppSet::RecordInput),
+            camera_follow_player.in_set(AppSet::UpdateCamera),
+        ),
     );
 }
 
@@ -49,6 +52,7 @@ fn spawn_player(
     mut commands: Commands,
     player_assets: Res<PlayerAssets>,
     mut texture_atlas_layouts: ResMut<Assets<TextureAtlasLayout>>,
+    level: Res<Level>,
 ) {
     // A texture atlas is a way to split one image with a grid into multiple
     // sprites. By attaching it to a [`SpriteBundle`] and providing an index, we
@@ -67,7 +71,7 @@ fn spawn_player(
             transform: Transform::from_scale(Vec2::splat(2.0).extend(1.0)),
             ..Default::default()
         },
-        GridTransform(IVec2::default()),
+        GridTransform(level.get_spawn()),
         OldGridTransform(vec![]),
         TextureAtlas {
             layout: texture_atlas_layout.clone(),
@@ -121,6 +125,22 @@ fn record_player_directional_input(
 
         tick.0.reset();
         next_tick.send(NextTick);
+    }
+}
+
+fn camera_follow_player(
+    mut camera: Query<&mut Transform, With<IsDefaultUiCamera>>,
+    player: Query<&Transform, (With<Player>, Without<IsDefaultUiCamera>)>,
+    time: Res<Time>,
+) {
+    let Ok(player) = player.get_single() else {
+        return;
+    };
+    for mut camera in &mut camera {
+        let target = player.translation.xy().extend(camera.translation.z);
+        const SPEED: f32 = 0.9;
+        let old_part = (1. - SPEED).powf(time.delta_seconds());
+        camera.translation = target.lerp(camera.translation, old_part);
     }
 }
 
