@@ -57,29 +57,34 @@ impl FromWorld for LevelAssets {
 /// A [`Command`] to spawn the level.
 pub fn spawn_level(world: &mut World) {
     world.run_system_once(
-        |mut commands: Commands, world_grid: Res<WorldGrid>, level_assets: Res<LevelAssets>| {
+        |mut commands: Commands,
+         world_grid: Res<WorldGrid>,
+         level_assets: Res<LevelAssets>,
+         level: Res<Level>| {
             let WorldGrid { origin, size } = *world_grid;
             let texture_handle = level_assets.tiles.clone();
 
             // https://github.com/StarArawn/bevy_ecs_tilemap/blob/main/examples/game_of_life.rs
-            let map_size = TilemapSize { x: 64, y: 64 };
+            let map_size = TilemapSize {
+                x: level.row_size as u32,
+                y: (level.terrain.len() / level.row_size) as u32,
+            };
             let mut tile_storage = TileStorage::empty(map_size);
             let tilemap_entity = commands.spawn_empty().id();
 
-            let mut i = 0;
-            for x in 0..map_size.x {
-                for y in 0..map_size.y {
-                    let tile_pos = TilePos { x, y };
-                    let tile_entity = commands
-                        .spawn(TileBundle {
-                            position: tile_pos,
-                            tilemap_id: TilemapId(tilemap_entity),
-                            ..Default::default()
-                        })
-                        .id();
-                    tile_storage.set(&tile_pos, tile_entity);
-                    i += 1;
-                }
+            for (i, &solid) in level.terrain.iter().enumerate() {
+                let x = (i % level.row_size) as u32;
+                let y = map_size.y - 1 - (i / level.row_size) as u32;
+                let tile_pos = TilePos { x, y };
+                let tile_entity = commands
+                    .spawn(TileBundle {
+                        position: tile_pos,
+                        tilemap_id: TilemapId(tilemap_entity),
+                        visible: TileVisible(solid),
+                        ..Default::default()
+                    })
+                    .id();
+                tile_storage.set(&tile_pos, tile_entity);
             }
 
             let tile_size = TilemapTileSize { x: 16.0, y: 16.0 };
@@ -157,7 +162,7 @@ impl Level {
     }
 
     pub fn get_spawn(&self) -> IVec2 {
-        IVec2::new(self.spawn.0 as i32, self.spawn.1 as i32)
+        IVec2::new(self.spawn.1 as i32, self.spawn.0 as i32)
     }
 }
 
