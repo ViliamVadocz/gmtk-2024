@@ -98,7 +98,7 @@ pub fn spawn_level(world: &mut World) {
                     size.y / tile_size.y,
                     1.0,
                 ))
-                .with_translation(origin.extend(0.0)),
+                .with_translation(origin.extend(-1.0)),
                 ..Default::default()
             });
         },
