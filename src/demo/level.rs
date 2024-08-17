@@ -21,6 +21,7 @@ pub(super) fn plugin(app: &mut App) {
     });
     app.add_event::<NextTick>();
     app.insert_resource(GridTick(Timer::from_seconds(0.2, TimerMode::Once)));
+    app.init_resource::<Level>();
 }
 
 /// A [`Command`] to spawn the level.
@@ -30,6 +31,43 @@ pub fn spawn_level(world: &mut World) {
     // The only thing we have in our level is a player,
     // but add things like walls etc. here.
     SpawnPlayer { max_speed: 400.0 }.apply(world);
+}
+
+#[derive(Resource, Reflect, Debug)]
+#[reflect(Resource)]
+struct Level {
+    terrain: Vec<bool>,
+    row_size: usize,
+    spawn: (usize, usize),
+    unlocks: [(usize, usize); 3],
+}
+
+/// Temporary hardcoded level for testing.
+impl Default for Level {
+    fn default() -> Self {
+        let o = false;
+        let x = true;
+        #[rustfmt::skip]
+        let terrain = vec![
+            x, o, o, o, o, o, o, o, o, o, o, o, o, o, o, x,
+            x, o, o, o, o, o, o, o, o, o, o, o, o, o, o, x,
+            x, o, o, o, o, o, o, o, o, o, o, o, o, o, o, x,
+            x, x, x, o, o, o, o, o, o, o, o, o, o, o, o, x,
+            o, o, x, x, o, o, o, o, o, o, o, o, o, o, o, x,
+            o, o, o, x, x, o, o, o, o, o, o, x, x, x, x, x,
+            o, o, o, o, x, x, x, x, x, x, x, x, o, o, o, o,
+        ];
+
+        let spawn = (1, 6);
+        let unlocks = [(1, 9), (2, 13), (4, 1)];
+
+        Self {
+            terrain,
+            row_size: 16,
+            spawn,
+            unlocks,
+        }
+    }
 }
 
 #[derive(Resource)]
