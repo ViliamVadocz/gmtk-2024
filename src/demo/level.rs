@@ -70,6 +70,19 @@ impl Default for Level {
     }
 }
 
+impl Level {
+    /// Check whether the position is solid terrain.
+    pub fn is_solid(&self, pos: IVec2) -> bool {
+        self.get_terrain(pos).unwrap_or_default()
+    }
+
+    fn get_terrain(&self, pos: IVec2) -> Option<bool> {
+        self.terrain
+            .get(self.row_size * usize::try_from(pos.y).ok()? + usize::try_from(pos.x).ok()?)
+            .copied()
+    }
+}
+
 #[derive(Resource)]
 pub struct WorldGrid {
     origin: Vec2,
