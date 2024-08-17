@@ -48,7 +48,7 @@ impl WorldGrid {
 pub struct GridTransform(pub IVec2);
 
 #[derive(Component)]
-pub struct OldGridTransform(pub IVec2);
+pub struct OldGridTransform(pub Vec<IVec2>);
 
 fn propagate_grid_transform(
     mut q: Query<(&mut Transform, &GridTransform, &OldGridTransform)>,
@@ -56,7 +56,7 @@ fn propagate_grid_transform(
     tick: Res<GridTick>,
 ) {
     for (mut transform, new, old) in &mut q {
-        let old = grid.project_to_world(old.0);
+        let old = grid.project_to_world(*old.0.last().unwrap_or(&new.0));
         let new = grid.project_to_world(new.0);
         let interpolated = old.lerp(new, tick.0.fraction());
         transform.translation = interpolated.extend(transform.translation.z);

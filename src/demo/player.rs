@@ -68,7 +68,7 @@ fn spawn_player(
             ..Default::default()
         },
         GridTransform(IVec2::default()),
-        OldGridTransform(IVec2::default()),
+        OldGridTransform(vec![]),
         TextureAtlas {
             layout: texture_atlas_layout.clone(),
             index: player_animation.get_atlas_index(),
@@ -84,6 +84,18 @@ fn record_player_directional_input(
     mut pos: Query<(&mut GridTransform, &mut OldGridTransform), With<Player>>,
     mut next_tick: EventWriter<NextTick>,
 ) {
+    if input.just_pressed(KeyCode::Backspace) {
+        for (mut new, mut old) in &mut pos {
+            if let Some(old) = old.0.pop() {
+                new.0 = old;
+            }
+        }
+
+        let end = tick.0.duration();
+        tick.0.set_elapsed(end);
+        return;
+    }
+
     let pressed_or_held =
         |key: KeyCode| tick.0.finished() && input.pressed(key) || input.just_pressed(key);
 
@@ -103,7 +115,7 @@ fn record_player_directional_input(
     }
     if intent.x != 0 {
         for (mut new, mut old) in &mut pos {
-            old.0 = new.0;
+            old.0.push(new.0);
             new.0 += intent;
         }
 
