@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.14", features = ["wayland"] }
+bevy_ecs_tilemap = { version = "0.14" }
 rand = "0.8"
 # Compile low-severity logs out of native builds for performance.
 log = { version = "0.4", features = [

@@ -11,6 +11,7 @@ use bevy::{
     audio::{AudioPlugin, Volume},
     prelude::*,
 };
+use bevy_ecs_tilemap::TilemapPlugin;
 
 pub struct AppPlugin;
 
@@ -44,7 +45,7 @@ impl Plugin for AppPlugin {
                 })
                 .set(WindowPlugin {
                     primary_window: Window {
-                        title: "Gmtk 2024".to_string(),
+                        title: "GMTK 2024".to_string(),
                         canvas: Some("#bevy".to_string()),
                         fit_canvas_to_parent: true,
                         prevent_default_event_handling: true,
@@ -60,6 +61,8 @@ impl Plugin for AppPlugin {
                     ..default()
                 }),
         );
+
+        app.add_plugins(TilemapPlugin);
 
         // Add other plugins.
         app.add_plugins((
