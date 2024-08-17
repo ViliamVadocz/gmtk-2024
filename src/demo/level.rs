@@ -9,7 +9,6 @@ use bevy_ecs_tilemap::prelude::*;
 
 use crate::{asset_tracking::LoadResource, demo::player::SpawnPlayer, AppSet};
 use super::player::PlayerState;
-use crate::{demo::player::SpawnPlayer, AppSet};
 
 pub(super) fn plugin(app: &mut App) {
     // No setup required for this plugin.
@@ -175,8 +174,8 @@ pub struct WorldGrid {
 }
 
 impl WorldGrid {
-    pub fn project_to_world(&self, coord: IVec2) -> Vec2 {
-        coord.as_vec2().mul_add(self.size, self.origin)
+    pub fn project_to_world(&self, coord: Vec2) -> Vec2 {
+        coord.mul_add(self.size, self.origin)
     }
 }
 
@@ -198,10 +197,10 @@ fn propagate_grid_transform(
         if let Some(anim) = &state.animation {
             let (offset, frame) = (anim.func)(tick.0.fraction());
             atlas.index = frame.get_atlas_index();
-            let old = grid.project_to_world(pos.0);
-            transform.translation = (old + offset).extend(transform.translation.z);
+            let new = grid.project_to_world(pos.0.as_vec2() + offset);
+            transform.translation = new.extend(transform.translation.z);
         } else {
-            transform.translation = grid.project_to_world(pos.0).extend(transform.translation.z);
+            transform.translation = grid.project_to_world(pos.0.as_vec2()).extend(transform.translation.z);
         }
         sprite.flip_x = state.x_dir == -1;
     }

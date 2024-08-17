@@ -103,7 +103,7 @@ fn record_player_directional_input(
         return;
     }
     if let Some(prev_anim) = state.animation.take() {
-        pos.0 += prev_anim.destination;
+        pos.0 += prev_anim.destination * IVec2::new(state.x_dir, 1);
     }
 
     let pressed_or_held =
