@@ -13,7 +13,6 @@ pub(super) fn plugin(app: &mut App) {
         (
             update_tick_timer.in_set(AppSet::TickTimers),
             propagate_grid_transform.in_set(AppSet::PropagateGridTransform),
-            // update_old_tranform.in_set(AppSet::PropagateGridTransform),
         ),
     );
     app.insert_resource(WorldGrid {
@@ -64,26 +63,10 @@ fn propagate_grid_transform(
     }
 }
 
-// fn update_old_tranform(
-//     mut q: Query<(&mut OldGridTransform, &GridTransform)>,
-//     // tick: Res<GridTick>,
-//     mut next_tick: EventReader<NextTick>,
-// ) {
-//     for NextTick in next_tick.read() {
-//         for (mut old, new) in &mut q {
-//             old.0 = new.0;
-//         }
-//     }
-// }
-
 #[derive(Resource)]
 pub struct GridTick(pub Timer);
 
-pub fn update_tick_timer(
-    time: Res<Time>,
-    mut tick: ResMut<GridTick>,
-    // mut next_tick: EventReader<NextTick>,
-) {
+pub fn update_tick_timer(time: Res<Time>, mut tick: ResMut<GridTick>) {
     tick.0.tick(time.delta());
 }
 
