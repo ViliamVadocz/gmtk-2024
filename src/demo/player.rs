@@ -60,7 +60,7 @@ fn spawn_player(
         Name::new("Player"),
         Player,
         SpriteBundle {
-            texture: player_assets.walk_texture.clone(),
+            texture: player_assets.idle_texture.clone(),
             transform: Transform::from_scale(Vec2::splat(4.0).extend(1.0)),
             sprite: Sprite {
                 anchor: Anchor::BottomLeft,
@@ -74,7 +74,7 @@ fn spawn_player(
             animation: None,
         },
         TextureAtlas {
-            layout: player_assets.walk_atlas.clone(),
+            layout: player_assets.idle_atlas.clone(),
             index: 0,
         },
         StateScoped(Screen::Gameplay),
@@ -119,6 +119,13 @@ fn record_player_directional_input(
     if pressed_or_held(KeyCode::KeyW) || pressed_or_held(KeyCode::ArrowUp) {
         action = Some(PlayerAction::Climb)
     }
+    if pressed_or_held(KeyCode::KeyS) || pressed_or_held(KeyCode::ArrowDown) {
+        action = Some(PlayerAction::Drop)
+    }
+    if pressed_or_held(KeyCode::Space) {
+        action = Some(PlayerAction::Idle)
+    }
+
     if let Some(action) = action {
         let Some(animation) = level.check_valid(pos.0, action, state.x_dir) else {
             return;

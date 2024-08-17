@@ -3,15 +3,18 @@ use std::time::Duration;
 use bevy::prelude::*;
 
 use super::{animation::PlayerAnimationState, level::Level};
-pub enum PlayerAction {
-    Walk,
-    Climb,
-}
 
 const UP: IVec2 = IVec2::new(0, 1);
 const DOWN: IVec2 = IVec2::new(0, -1);
 const LEFT: IVec2 = IVec2::new(-1, 0);
 const RIGHT: IVec2 = IVec2::new(1, 0);
+
+pub enum PlayerAction {
+    Walk,
+    Climb,
+    Drop,
+    Idle,
+}
 
 impl Level {
     pub fn check_valid(&self, pos: IVec2, action: PlayerAction, x_dir: i32) -> Option<Animation> {
@@ -53,6 +56,8 @@ impl PlayerAction {
         match self {
             PlayerAction::Walk => vec![RIGHT],
             PlayerAction::Climb => vec![UP, UP + RIGHT],
+            PlayerAction::Drop => vec![RIGHT, DOWN + RIGHT],
+            PlayerAction::Idle => vec![],
         }
         .into_iter()
     }
@@ -62,10 +67,10 @@ impl PlayerAction {
         match self {
             PlayerAction::Walk => Animation {
                 final_offset: RIGHT,
-                duration: Duration::from_secs_f32(1.0),
+                duration: Duration::from_secs_f32(0.8),
                 func: Box::new(|f| AnimationFrame {
                     offset: Vec2::ZERO,
-                    state: PlayerAnimationState::Walk((f * 12.0) as usize),
+                    state: PlayerAnimationState::Walk(2 + (f * 10.0) as usize),
                 }),
             },
             PlayerAction::Climb => Animation {
@@ -74,6 +79,22 @@ impl PlayerAction {
                 func: Box::new(|f| AnimationFrame {
                     offset: Vec2::ZERO,
                     state: PlayerAnimationState::Climb((f * 11.0) as usize),
+                }),
+            },
+            PlayerAction::Drop => Animation {
+                final_offset: DOWN + RIGHT,
+                duration: Duration::from_secs_f32(1.0),
+                func: Box::new(|f| AnimationFrame {
+                    offset: Vec2::ZERO,
+                    state: PlayerAnimationState::Drop((f * 12.0) as usize),
+                }),
+            },
+            PlayerAction::Idle => Animation {
+                final_offset: IVec2::ZERO,
+                duration: Duration::from_secs_f32(1.0),
+                func: Box::new(|f| AnimationFrame {
+                    offset: Vec2::ZERO,
+                    state: PlayerAnimationState::Idle((f * 4.0) as usize),
                 }),
             },
         }

@@ -21,9 +21,10 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Reflect, PartialEq, Clone, Copy)]
 pub enum PlayerAnimationState {
-    Idle(usize),
     Walk(usize),
     Climb(usize),
+    Drop(usize),
+    Idle(usize),
 }
 
 impl PlayerAnimationState {
@@ -35,12 +36,6 @@ impl PlayerAnimationState {
         anchor: &mut Anchor,
     ) {
         match self {
-            Self::Idle(i) => {
-                atlas.layout = player_assets.idle_atlas.clone();
-                atlas.index = i;
-                *texture = player_assets.idle_texture.clone();
-                *anchor = Anchor::Center;
-            }
             Self::Walk(i) => {
                 atlas.layout = player_assets.walk_atlas.clone();
                 atlas.index = i;
@@ -52,6 +47,18 @@ impl PlayerAnimationState {
                 atlas.index = i;
                 *texture = player_assets.climb_texture.clone();
                 *anchor = Anchor::Custom(Vec2::new(-0.25, -0.25));
+            }
+            Self::Idle(i) => {
+                atlas.layout = player_assets.idle_atlas.clone();
+                atlas.index = i;
+                *texture = player_assets.idle_texture.clone();
+                *anchor = Anchor::Center;
+            }
+            Self::Drop(i) => {
+                atlas.layout = player_assets.drop_atlas.clone();
+                atlas.index = i;
+                *texture = player_assets.drop_texture.clone();
+                *anchor = Anchor::Custom(Vec2::new(-0.25, 0.25));
             }
         };
     }
