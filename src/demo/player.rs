@@ -38,6 +38,7 @@ pub struct Player;
 pub struct SpawnPlayer {
     /// See [`MovementController::max_speed`].
     pub max_speed: f32,
+    pub location: Vec2,
 }
 
 impl Command for SpawnPlayer {
@@ -66,7 +67,8 @@ fn spawn_player(
         Player,
         SpriteBundle {
             texture: player_assets.ducky.clone(),
-            transform: Transform::from_scale(Vec2::splat(8.0).extend(1.0)),
+            transform: Transform::from_scale(Vec2::splat(8.0).extend(1.0))
+                .with_translation(config.location.extend(0.)),
             ..Default::default()
         },
         TextureAtlas {
@@ -105,7 +107,11 @@ fn record_player_directional_input(
     // Normalize so that diagonal movement has the same speed as
     // horizontal and vertical movement.
     // This should be omitted if the input comes from an analog stick instead.
-    let intent = intent.normalize_or_zero();
+    let mut intent = intent.normalize_or_zero();
+
+    if input.pressed(KeyCode::ShiftLeft) {
+        intent *= 0.5;
+    }
 
     // Apply movement intent to controllers.
     for mut controller in &mut controller_query {
