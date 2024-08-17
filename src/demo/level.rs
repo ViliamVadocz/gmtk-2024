@@ -16,7 +16,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, update_tick_timer.in_set(AppSet::TickTimers));
     app.insert_resource(WorldGrid {
         origin: Vec2::splat(0.),
-        size: Vec2::splat(50.),
+        size: Vec2::splat(64.),
     });
     app.add_event::<NextTick>();
     app.insert_resource(GridTick(Timer::from_seconds(0.2, TimerMode::Once)));
@@ -103,7 +103,7 @@ pub fn spawn_level(world: &mut World) {
         },
     );
 
-    SpawnPlayer { max_speed: 400.0 }.apply(world);
+    SpawnPlayer.apply(world);
 }
 
 #[derive(Resource, Reflect, Debug)]

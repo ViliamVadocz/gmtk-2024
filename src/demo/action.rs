@@ -62,18 +62,18 @@ impl PlayerAction {
         match self {
             PlayerAction::Walk => Animation {
                 final_offset: RIGHT,
-                duration: Duration::from_secs_f32(0.2),
+                duration: Duration::from_secs_f32(1.0),
                 func: Box::new(|f| AnimationFrame {
-                    offset: RIGHT.as_vec2() * f,
-                    state: PlayerAnimationState::Walking((f * 6.) as usize),
+                    offset: Vec2::ZERO,
+                    state: PlayerAnimationState::Walk((f * 12.0) as usize),
                 }),
             },
             PlayerAction::Climb => Animation {
                 final_offset: UP + RIGHT,
-                duration: Duration::from_secs_f32(0.5),
+                duration: Duration::from_secs_f32(1.1),
                 func: Box::new(|f| AnimationFrame {
-                    offset: (RIGHT + UP).as_vec2() * f,
-                    state: PlayerAnimationState::Walking((f * 6.) as usize),
+                    offset: Vec2::ZERO,
+                    state: PlayerAnimationState::Climb((f * 11.0) as usize),
                 }),
             },
         }

@@ -8,7 +8,7 @@ use bevy::prelude::*;
 
 use super::{
     level::{GridTick, GridTransform, WorldGrid},
-    player::PlayerState,
+    player::{PlayerAssets, PlayerState},
 };
 use crate::AppSet;
 
@@ -21,17 +21,35 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Reflect, PartialEq, Clone, Copy)]
 pub enum PlayerAnimationState {
-    Idling(usize),
-    Walking(usize),
+    Idle(usize),
+    Walk(usize),
+    Climb(usize),
 }
 
 impl PlayerAnimationState {
-    /// Return sprite index in the atlas.
-    pub fn get_atlas_index(self) -> usize {
+    pub fn update_animation(
+        self,
+        player_assets: &PlayerAssets,
+        atlas: &mut TextureAtlas,
+        texture: &mut Handle<Image>,
+    ) {
         match self {
-            Self::Idling(frame) => frame,
-            Self::Walking(frame) => 6 + frame,
-        }
+            Self::Idle(i) => {
+                atlas.layout = player_assets.idle_atlas.clone();
+                atlas.index = i;
+                *texture = player_assets.idle_texture.clone();
+            }
+            Self::Walk(i) => {
+                atlas.layout = player_assets.walk_atlas.clone();
+                atlas.index = i;
+                *texture = player_assets.walk_texture.clone();
+            }
+            Self::Climb(i) => {
+                atlas.layout = player_assets.climb_atlas.clone();
+                atlas.index = i;
+                *texture = player_assets.climb_texture.clone();
+            }
+        };
     }
 }
 
@@ -42,14 +60,22 @@ fn propagate_grid_transform(
         &PlayerState,
         &mut TextureAtlas,
         &mut Sprite,
+        &mut Handle<Image>,
     )>,
     grid: Res<WorldGrid>,
     tick: Res<GridTick>,
+    player_assets: Option<Res<PlayerAssets>>,
 ) {
-    for (mut transform, pos, state, mut atlas, mut sprite) in &mut q {
+    for (mut transform, pos, state, mut atlas, mut sprite, mut texture) in &mut q {
         if let Some(anim) = &state.animation {
             let frame = (anim.func)(tick.0.fraction());
-            atlas.index = frame.state.get_atlas_index();
+            frame.state.update_animation(
+                player_assets
+                    .as_ref()
+                    .expect("Player assets should already be loaded."),
+                &mut atlas,
+                &mut texture,
+            );
             let new = grid.project_to_world(pos.0.as_vec2() + frame.offset(state.x_dir));
             transform.translation = new.extend(transform.translation.z);
         } else {
