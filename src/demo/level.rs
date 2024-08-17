@@ -2,12 +2,26 @@
 
 use bevy::{ecs::world::Command, prelude::*};
 
-use crate::demo::player::SpawnPlayer;
+use crate::{demo::player::SpawnPlayer, AppSet};
 
-pub(super) fn plugin(_app: &mut App) {
+pub(super) fn plugin(app: &mut App) {
     // No setup required for this plugin.
     // It's still good to have a function here so that we can add some setup
     // later if needed.
+    app.add_systems(
+        Update,
+        (
+            update_tick_timer.in_set(AppSet::TickTimers),
+            propagate_grid_transform.in_set(AppSet::PropagateGridTransform),
+            // update_old_tranform.in_set(AppSet::PropagateGridTransform),
+        ),
+    );
+    app.insert_resource(WorldGrid {
+        origin: Vec2::splat(0.),
+        size: Vec2::splat(50.),
+    });
+    app.add_event::<NextTick>();
+    app.insert_resource(GridTick(Timer::from_seconds(0.2, TimerMode::Once)));
 }
 
 /// A [`Command`] to spawn the level.
@@ -18,3 +32,60 @@ pub fn spawn_level(world: &mut World) {
     // but add things like walls etc. here.
     SpawnPlayer { max_speed: 400.0 }.apply(world);
 }
+
+#[derive(Resource)]
+pub struct WorldGrid {
+    origin: Vec2,
+    size: Vec2,
+}
+
+impl WorldGrid {
+    pub fn project_to_world(&self, coord: IVec2) -> Vec2 {
+        coord.as_vec2().mul_add(self.size, self.origin)
+    }
+}
+
+#[derive(Component)]
+pub struct GridTransform(pub IVec2);
+
+#[derive(Component)]
+pub struct OldGridTransform(pub IVec2);
+
+fn propagate_grid_transform(
+    mut q: Query<(&mut Transform, &GridTransform, &OldGridTransform)>,
+    grid: Res<WorldGrid>,
+    tick: Res<GridTick>,
+) {
+    for (mut transform, new, old) in &mut q {
+        let old = grid.project_to_world(old.0);
+        let new = grid.project_to_world(new.0);
+        let interpolated = old.lerp(new, tick.0.fraction());
+        transform.translation = interpolated.extend(transform.translation.z);
+    }
+}
+
+// fn update_old_tranform(
+//     mut q: Query<(&mut OldGridTransform, &GridTransform)>,
+//     // tick: Res<GridTick>,
+//     mut next_tick: EventReader<NextTick>,
+// ) {
+//     for NextTick in next_tick.read() {
+//         for (mut old, new) in &mut q {
+//             old.0 = new.0;
+//         }
+//     }
+// }
+
+#[derive(Resource)]
+pub struct GridTick(pub Timer);
+
+pub fn update_tick_timer(
+    time: Res<Time>,
+    mut tick: ResMut<GridTick>,
+    // mut next_tick: EventReader<NextTick>,
+) {
+    tick.0.tick(time.delta());
+}
+
+#[derive(Event)]
+pub struct NextTick;

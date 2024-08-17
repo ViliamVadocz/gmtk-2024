@@ -8,12 +8,10 @@ use bevy::{
     render::texture::{ImageLoaderSettings, ImageSampler},
 };
 
+use super::level::{GridTick, GridTransform, NextTick, OldGridTransform};
 use crate::{
     asset_tracking::LoadResource,
-    demo::{
-        animation::PlayerAnimation,
-        movement::{MovementController, ScreenWrap},
-    },
+    demo::animation::PlayerAnimation,
     screens::Screen,
     AppSet,
 };
@@ -66,18 +64,15 @@ fn spawn_player(
         Player,
         SpriteBundle {
             texture: player_assets.ducky.clone(),
-            transform: Transform::from_scale(Vec2::splat(8.0).extend(1.0)),
+            transform: Transform::from_scale(Vec2::splat(2.0).extend(1.0)),
             ..Default::default()
         },
+        GridTransform(IVec2::default()),
+        OldGridTransform(IVec2::default()),
         TextureAtlas {
             layout: texture_atlas_layout.clone(),
             index: player_animation.get_atlas_index(),
         },
-        MovementController {
-            max_speed: config.max_speed,
-            ..default()
-        },
-        ScreenWrap,
         player_animation,
         StateScoped(Screen::Gameplay),
     ));
@@ -85,31 +80,36 @@ fn spawn_player(
 
 fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
-    mut controller_query: Query<&mut MovementController, With<Player>>,
+    mut tick: ResMut<GridTick>,
+    mut pos: Query<(&mut GridTransform, &mut OldGridTransform), With<Player>>,
+    mut next_tick: EventWriter<NextTick>,
 ) {
+    if !tick.0.finished() {
+        return;
+    }
+
     // Collect directional input.
-    let mut intent = Vec2::ZERO;
+    let mut intent = IVec2::ZERO;
     if input.pressed(KeyCode::KeyW) || input.pressed(KeyCode::ArrowUp) {
-        intent.y += 1.0;
+        intent.y += 1;
     }
     if input.pressed(KeyCode::KeyS) || input.pressed(KeyCode::ArrowDown) {
-        intent.y -= 1.0;
+        intent.y -= 1;
     }
     if input.pressed(KeyCode::KeyA) || input.pressed(KeyCode::ArrowLeft) {
-        intent.x -= 1.0;
+        intent.x -= 1;
     }
     if input.pressed(KeyCode::KeyD) || input.pressed(KeyCode::ArrowRight) {
-        intent.x += 1.0;
+        intent.x += 1;
     }
+    if intent != IVec2::ZERO {
+        for (mut new, mut old) in &mut pos {
+            old.0 = new.0;
+            new.0 += intent;
+        }
 
-    // Normalize so that diagonal movement has the same speed as
-    // horizontal and vertical movement.
-    // This should be omitted if the input comes from an analog stick instead.
-    let intent = intent.normalize_or_zero();
-
-    // Apply movement intent to controllers.
-    for mut controller in &mut controller_query {
-        controller.intent = intent;
+        tick.0.reset();
+        next_tick.send(NextTick);
     }
 }
 

@@ -19,7 +19,13 @@ impl Plugin for AppPlugin {
         // Order new `AppStep` variants by adding them here:
         app.configure_sets(
             Update,
-            (AppSet::TickTimers, AppSet::RecordInput, AppSet::Update).chain(),
+            (
+                AppSet::TickTimers,
+                AppSet::RecordInput,
+                AppSet::Update,
+                AppSet::PropagateGridTransform,
+            )
+                .chain(),
         );
 
         // Spawn the main camera.
@@ -48,7 +54,7 @@ impl Plugin for AppPlugin {
                 })
                 .set(AudioPlugin {
                     global_volume: GlobalVolume {
-                        volume: Volume::new(0.3),
+                        volume: Volume::new(0.1),
                     },
                     ..default()
                 }),
@@ -79,6 +85,7 @@ enum AppSet {
     RecordInput,
     /// Do everything else (consider splitting this into further variants).
     Update,
+    PropagateGridTransform,
 }
 
 fn spawn_camera(mut commands: Commands) {
