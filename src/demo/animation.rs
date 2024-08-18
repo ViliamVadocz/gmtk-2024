@@ -188,7 +188,7 @@ impl FromWorld for PlayerAssets {
             jump: AnimationResource {
                 texture: climb_texture,
                 atlas: climb_atlas,
-                squares: vec![RIGHT, RIGHT + UP, RIGHT + UP + RIGHT],
+                squares: vec![RIGHT, UP, RIGHT + UP, RIGHT + UP + RIGHT],
                 duration: Duration::from_secs_f32(0.73),
                 frame_count: 11,
                 anchor: Anchor::Custom(Vec2::new(-0.25, -0.25)),
