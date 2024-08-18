@@ -27,7 +27,7 @@ impl PlayerAction {
             PlayerAction::Climb => &assets.climb,
             PlayerAction::Drop => &assets.drop,
             PlayerAction::Idle => &assets.idle,
-            PlayerAction::Turn => &assets.idle,
+            PlayerAction::Turn => &assets.turn,
             PlayerAction::Jump => &assets.climb,
         }
     }

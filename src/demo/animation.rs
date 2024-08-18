@@ -104,12 +104,16 @@ pub struct PlayerAssets {
 
     #[dependency]
     pub jump: AnimationResource,
+
+    #[dependency]
+    pub turn: AnimationResource,
 }
 
 impl PlayerAssets {
     pub const PATH_CLIMB: &'static str = "images/climb.png";
     pub const PATH_DROP: &'static str = "images/drop.png";
     pub const PATH_IDLE: &'static str = "images/idle.png";
+    pub const PATH_TURN: &'static str = "images/turn.png";
     pub const PATH_WALK: &'static str = "images/walk.png";
 }
 
@@ -126,6 +130,7 @@ impl FromWorld for PlayerAssets {
         let walk_texture = assets.load_with_settings(PlayerAssets::PATH_WALK, settings);
         let climb_texture = assets.load_with_settings(PlayerAssets::PATH_CLIMB, settings);
         let drop_texture = assets.load_with_settings(PlayerAssets::PATH_DROP, settings);
+        let turn_texture = assets.load_with_settings(PlayerAssets::PATH_TURN, settings);
 
         // A texture atlas is a way to split one image with a grid into multiple
         // sprites. By attaching it to a [`SpriteBundle`] and providing an index, we
@@ -145,6 +150,7 @@ impl FromWorld for PlayerAssets {
         let walk_atlas = layout(UVec2::new(32, 16), 4, 3);
         let climb_atlas = layout(UVec2::splat(32), 4, 3);
         let drop_atlas = layout(UVec2::splat(32), 4, 3);
+        let turn_atlas = layout(UVec2::splat(16), 7, 1);
 
         Self {
             idle: AnimationResource {
@@ -186,6 +192,14 @@ impl FromWorld for PlayerAssets {
                 duration: Duration::from_secs_f32(1.1),
                 frame_count: 11,
                 anchor: Anchor::Custom(Vec2::new(-0.25, -0.25)),
+            },
+            turn: AnimationResource {
+                texture: turn_texture,
+                atlas: turn_atlas,
+                final_offset: IVec2::ZERO,
+                duration: Duration::from_secs_f32(1.0),
+                frame_count: 7,
+                anchor: Anchor::Center,
             },
         }
     }
