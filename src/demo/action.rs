@@ -28,7 +28,7 @@ impl PlayerAction {
             PlayerAction::Drop => &assets.drop,
             PlayerAction::Idle => &assets.idle,
             PlayerAction::Turn => &assets.turn,
-            PlayerAction::Jump => &assets.climb,
+            PlayerAction::Jump => &assets.jump,
         }
     }
 
@@ -53,25 +53,9 @@ impl Level {
         x_dir: i32,
         assets: &PlayerAssets,
     ) -> Option<AnimationResource> {
-        action
-            .squares()
-            .all(|square| !self.is_solid(pos + square * IVec2::new(x_dir, 1)))
-            .then(|| action.get_resource(assets).clone())
-            .filter(|anim| self.is_solid(pos + anim.final_offset(x_dir) + DOWN))
-    }
-}
-
-impl PlayerAction {
-    // the squares in the order that they are touched
-    pub fn squares(&self) -> impl Iterator<Item = IVec2> {
-        match self {
-            PlayerAction::Walk => vec![RIGHT],
-            PlayerAction::Climb => vec![UP, UP + RIGHT],
-            PlayerAction::Drop => vec![RIGHT, DOWN + RIGHT],
-            PlayerAction::Idle => vec![],
-            PlayerAction::Turn => vec![],
-            PlayerAction::Jump => vec![RIGHT, RIGHT + UP, RIGHT + UP + RIGHT],
-        }
-        .into_iter()
+        let anim = action.get_resource(assets);
+        let squares = &mut anim.squares.iter().copied();
+        let free = squares.all(|square| !self.is_solid(pos + square * IVec2::new(x_dir, 1)));
+        (free && self.is_solid(pos + anim.final_offset(x_dir) + DOWN)).then(|| anim.clone())
     }
 }

@@ -135,11 +135,7 @@ pub fn focus(
     for (interaction_entity, interaction) in &query {
         if *interaction == Interaction::Pressed {
             for (entity, mut inactive) in &mut text_input_query {
-                if entity == interaction_entity {
-                    inactive.0 = false;
-                } else {
-                    inactive.0 = true;
-                }
+                inactive.0 = entity != interaction_entity;
             }
         }
     }

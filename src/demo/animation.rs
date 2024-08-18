@@ -74,7 +74,7 @@ pub struct AnimationResource {
     #[dependency]
     pub texture: Handle<Image>,
     pub atlas: Handle<TextureAtlasLayout>,
-    final_offset: IVec2,
+    pub squares: Vec<IVec2>,
     pub duration: Duration,
     frame_count: usize,
     anchor: Anchor,
@@ -82,7 +82,7 @@ pub struct AnimationResource {
 
 impl AnimationResource {
     pub fn final_offset(&self, x_dir: i32) -> IVec2 {
-        self.final_offset * IVec2::new(x_dir, 1)
+        self.squares.last().copied().unwrap_or(IVec2::ZERO) * IVec2::new(x_dir, 1)
     }
 }
 
@@ -156,7 +156,7 @@ impl FromWorld for PlayerAssets {
             idle: AnimationResource {
                 texture: idle_texture,
                 atlas: idle_atlas,
-                final_offset: IVec2::ZERO,
+                squares: vec![],
                 duration: Duration::from_secs_f32(0.26),
                 frame_count: 4,
                 anchor: Anchor::Center,
@@ -164,7 +164,7 @@ impl FromWorld for PlayerAssets {
             walk: AnimationResource {
                 texture: walk_texture,
                 atlas: walk_atlas,
-                final_offset: RIGHT,
+                squares: vec![RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 12,
                 anchor: Anchor::Custom(Vec2::new(-0.25, 0.)),
@@ -172,7 +172,7 @@ impl FromWorld for PlayerAssets {
             climb: AnimationResource {
                 texture: climb_texture.clone(),
                 atlas: climb_atlas.clone(),
-                final_offset: UP + RIGHT,
+                squares: vec![UP, UP + RIGHT],
                 duration: Duration::from_secs_f32(0.73),
                 frame_count: 11,
                 anchor: Anchor::Custom(Vec2::new(-0.25, -0.25)),
@@ -180,7 +180,7 @@ impl FromWorld for PlayerAssets {
             drop: AnimationResource {
                 texture: drop_texture,
                 atlas: drop_atlas,
-                final_offset: DOWN + RIGHT,
+                squares: vec![RIGHT, DOWN + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 12,
                 anchor: Anchor::Custom(Vec2::new(-0.25, 0.25)),
@@ -188,7 +188,7 @@ impl FromWorld for PlayerAssets {
             jump: AnimationResource {
                 texture: climb_texture,
                 atlas: climb_atlas,
-                final_offset: RIGHT + UP + RIGHT,
+                squares: vec![RIGHT, RIGHT + UP, RIGHT + UP + RIGHT],
                 duration: Duration::from_secs_f32(0.73),
                 frame_count: 11,
                 anchor: Anchor::Custom(Vec2::new(-0.25, -0.25)),
@@ -196,7 +196,7 @@ impl FromWorld for PlayerAssets {
             turn: AnimationResource {
                 texture: turn_texture,
                 atlas: turn_atlas,
-                final_offset: IVec2::ZERO,
+                squares: vec![],
                 duration: Duration::from_secs_f32(0.46),
                 frame_count: 7,
                 anchor: Anchor::Center,
