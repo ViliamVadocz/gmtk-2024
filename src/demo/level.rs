@@ -1,13 +1,13 @@
 //! Spawn the main level.
 
 use bevy::{
-    ecs::{system::RunSystemOnce, world::Command},
+    ecs::system::RunSystemOnce,
     prelude::*,
     render::texture::{ImageLoaderSettings, ImageSampler},
 };
 use bevy_ecs_tilemap::prelude::*;
 
-use crate::{asset_tracking::LoadResource, demo::player::SpawnPlayer, AppSet};
+use crate::{asset_tracking::LoadResource, demo::player::spawn_player, AppSet};
 
 pub(super) fn plugin(app: &mut App) {
     // No setup required for this plugin.
@@ -109,7 +109,7 @@ pub fn spawn_level(world: &mut World) {
         },
     );
 
-    SpawnPlayer.apply(world);
+    world.run_system_once(spawn_player);
 }
 
 #[derive(Resource, Reflect, Debug)]

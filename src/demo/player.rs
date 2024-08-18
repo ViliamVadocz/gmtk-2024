@@ -2,11 +2,7 @@
 //! Note that this is separate from the `movement` module as that could be used
 //! for other characters as well.
 
-use bevy::{
-    ecs::{system::RunSystemOnce as _, world::Command},
-    prelude::*,
-    sprite::Anchor,
-};
+use bevy::{prelude::*, sprite::Anchor};
 use bevy_simple_text_input::TextInputInactive;
 
 use super::{
@@ -24,7 +20,6 @@ pub(super) fn plugin(app: &mut App) {
     app.register_type::<Player>();
     app.load_resource::<PlayerAssets>();
 
-    // Record directional input as movement controls.
     app.add_systems(
         Update,
         (
@@ -38,16 +33,6 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Player;
 
-/// A command to spawn the player character.
-#[derive(Debug)]
-pub struct SpawnPlayer;
-
-impl Command for SpawnPlayer {
-    fn apply(self, world: &mut World) {
-        world.run_system_once_with(self, spawn_player);
-    }
-}
-
 #[derive(Component)]
 pub struct PlayerState {
     // can be 1 or -1
@@ -59,12 +44,7 @@ pub struct PlayerState {
     pub just_go: bool,
 }
 
-fn spawn_player(
-    In(_config): In<SpawnPlayer>,
-    mut commands: Commands,
-    player_assets: Res<PlayerAssets>,
-    level: Res<Level>,
-) {
+pub fn spawn_player(mut commands: Commands, player_assets: Res<PlayerAssets>, level: Res<Level>) {
     commands.spawn((
         Name::new("Player"),
         Player,
