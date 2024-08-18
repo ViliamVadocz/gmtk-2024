@@ -6,7 +6,7 @@
 use bevy::prelude::*;
 
 mod action;
-mod animation;
+pub mod animation;
 pub mod level;
 pub mod player;
 

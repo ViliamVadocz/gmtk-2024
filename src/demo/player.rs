@@ -5,12 +5,12 @@
 use bevy::{
     ecs::{system::RunSystemOnce as _, world::Command},
     prelude::*,
-    render::texture::{ImageLoaderSettings, ImageSampler},
     sprite::Anchor,
 };
 
 use super::{
-    action::{Animation, PlayerAction},
+    action::PlayerAction,
+    animation::{AnimationResource, PlayerAssets},
     level::{GridTick, GridTransform, Level, NextTick},
 };
 use crate::{asset_tracking::LoadResource, screens::Screen, AppSet};
@@ -47,7 +47,7 @@ impl Command for SpawnPlayer {
 pub struct PlayerState {
     // can be 1 or -1
     pub x_dir: i32,
-    pub animation: Option<Animation>,
+    pub animation: Option<AnimationResource>,
 }
 
 fn spawn_player(
@@ -60,7 +60,7 @@ fn spawn_player(
         Name::new("Player"),
         Player,
         SpriteBundle {
-            texture: player_assets.idle_texture.clone(),
+            texture: player_assets.idle.texture.clone(),
             transform: Transform::from_scale(Vec2::splat(4.0).extend(1.0)),
             sprite: Sprite {
                 anchor: Anchor::BottomLeft,
@@ -74,7 +74,7 @@ fn spawn_player(
             animation: None,
         },
         TextureAtlas {
-            layout: player_assets.idle_atlas.clone(),
+            layout: player_assets.idle.atlas.clone(),
             index: 0,
         },
         StateScoped(Screen::Gameplay),
@@ -85,6 +85,7 @@ fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
     mut tick: ResMut<GridTick>,
     mut player: Query<(&mut GridTransform, &mut PlayerState), With<Player>>,
+    assets: Res<PlayerAssets>,
     mut next_tick: EventWriter<NextTick>,
     level: Res<Level>,
 ) {
@@ -127,7 +128,7 @@ fn record_player_directional_input(
     }
 
     if let Some(action) = action {
-        let Some(animation) = level.check_valid(pos.0, action, state.x_dir) else {
+        let Some(animation) = level.check_valid(pos.0, action, state.x_dir, &assets) else {
             return;
         };
 
@@ -151,100 +152,5 @@ fn camera_follow_player(
         const SPEED: f32 = 0.9;
         let old_part = (1. - SPEED).powf(time.delta_seconds());
         camera.translation = target.lerp(camera.translation, old_part);
-    }
-}
-
-#[derive(Resource, Asset, Reflect, Clone)]
-pub struct PlayerAssets {
-    // This #[dependency] attribute marks the field as a dependency of the Asset.
-    // This means that it will not finish loading until the labeled asset is also loaded.
-    #[dependency]
-    pub idle_texture: Handle<Image>,
-    // #[dependency]
-    pub idle_atlas: Handle<TextureAtlasLayout>,
-
-    #[dependency]
-    pub walk_texture: Handle<Image>,
-    // #[dependency]
-    pub walk_atlas: Handle<TextureAtlasLayout>,
-
-    #[dependency]
-    pub climb_texture: Handle<Image>,
-    // #[dependency]
-    pub climb_atlas: Handle<TextureAtlasLayout>,
-
-    #[dependency]
-    pub drop_texture: Handle<Image>,
-    // #[dependency]
-    pub drop_atlas: Handle<TextureAtlasLayout>,
-}
-
-impl PlayerAssets {
-    pub const PATH_CLIMB: &'static str = "images/climb.png";
-    pub const PATH_DROP: &'static str = "images/drop.png";
-    pub const PATH_IDLE: &'static str = "images/idle.png";
-    pub const PATH_WALK: &'static str = "images/walk.png";
-}
-
-impl FromWorld for PlayerAssets {
-    fn from_world(world: &mut World) -> Self {
-        let assets = world.resource::<AssetServer>();
-
-        let settings = |settings: &mut ImageLoaderSettings| {
-            // Use `nearest` image sampling to preserve the pixel art style.
-            settings.sampler = ImageSampler::nearest();
-        };
-
-        let idle_texture = assets.load_with_settings(PlayerAssets::PATH_IDLE, settings);
-        let walk_texture = assets.load_with_settings(PlayerAssets::PATH_WALK, settings);
-        let climb_texture = assets.load_with_settings(PlayerAssets::PATH_CLIMB, settings);
-        let drop_texture = assets.load_with_settings(PlayerAssets::PATH_DROP, settings);
-
-        // A texture atlas is a way to split one image with a grid into multiple
-        // sprites. By attaching it to a [`SpriteBundle`] and providing an index, we
-        // can specify which section of the image we want to see. We will use this
-        // to animate our player character. You can learn more about texture atlases in
-        // this example: https://github.com/bevyengine/bevy/blob/latest/examples/2d/texture_atlas.rs
-        let mut texture_atlas_layouts = world.resource_mut::<Assets<TextureAtlasLayout>>();
-
-        let idle_atlas = texture_atlas_layouts.add(TextureAtlasLayout::from_grid(
-            UVec2::splat(16),
-            2,
-            2,
-            None,
-            None,
-        ));
-        let walk_atlas = texture_atlas_layouts.add(TextureAtlasLayout::from_grid(
-            UVec2::new(32, 16),
-            4,
-            3,
-            None,
-            None,
-        ));
-        let climb_atlas = texture_atlas_layouts.add(TextureAtlasLayout::from_grid(
-            UVec2::splat(32),
-            4,
-            3,
-            None,
-            None,
-        ));
-        let drop_atlas = texture_atlas_layouts.add(TextureAtlasLayout::from_grid(
-            UVec2::splat(32),
-            4,
-            3,
-            None,
-            None,
-        ));
-
-        Self {
-            idle_texture,
-            idle_atlas,
-            walk_texture,
-            walk_atlas,
-            climb_texture,
-            climb_atlas,
-            drop_texture,
-            drop_atlas,
-        }
     }
 }
