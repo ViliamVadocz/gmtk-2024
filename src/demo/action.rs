@@ -17,6 +17,7 @@ pub enum PlayerAction {
     Drop,
     Idle,
     Turn,
+    Jump,
 }
 
 impl PlayerAction {
@@ -27,6 +28,7 @@ impl PlayerAction {
             PlayerAction::Drop => &assets.drop,
             PlayerAction::Idle => &assets.idle,
             PlayerAction::Turn => &assets.idle,
+            PlayerAction::Jump => &assets.climb,
         }
     }
 
@@ -37,6 +39,7 @@ impl PlayerAction {
             'd' => PlayerAction::Drop,
             'i' => PlayerAction::Idle,
             't' => PlayerAction::Turn,
+            'j' => PlayerAction::Jump,
             _ => return None,
         })
     }
@@ -67,6 +70,7 @@ impl PlayerAction {
             PlayerAction::Drop => vec![RIGHT, DOWN + RIGHT],
             PlayerAction::Idle => vec![],
             PlayerAction::Turn => vec![],
+            PlayerAction::Jump => vec![RIGHT, RIGHT + UP, RIGHT + UP + RIGHT],
         }
         .into_iter()
     }

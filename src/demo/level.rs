@@ -123,8 +123,8 @@ impl Default for Level {
         #[rustfmt::skip]
         let terrain = vec![
             x, o, o, o, o, o, o, o, o, o, o, o, o, o, o, x,
-            x, o, o, o, o, o, o, o, o, o, o, o, o, o, o, x,
-            x, o, o, o, o, o, o, o, o, o, o, o, o, o, o, x,
+            x, o, o, o, o, o, o, o, x, x, x, o, o, o, o, x,
+            x, o, o, o, x, x, x, o, o, o, o, o, o, o, o, x,
             x, x, x, o, o, o, o, o, o, o, o, o, o, o, o, x,
             o, o, x, x, o, o, o, o, o, o, o, o, o, o, o, x,
             o, o, o, x, x, o, o, o, o, o, o, x, x, x, x, x,
