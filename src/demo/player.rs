@@ -85,7 +85,7 @@ fn record_player_directional_input(
     input: Res<ButtonInput<KeyCode>>,
     mut tick: ResMut<GridTick>,
     mut player: Query<(&mut GridTransform, &mut PlayerState), With<Player>>,
-    assets: Res<PlayerAssets>,
+    assets: Option<Res<PlayerAssets>>,
     mut next_tick: EventWriter<NextTick>,
     level: Res<Level>,
 ) {
@@ -128,7 +128,8 @@ fn record_player_directional_input(
     }
 
     if let Some(action) = action {
-        let Some(animation) = level.check_valid(pos.0, action, state.x_dir, &assets) else {
+        let assets = assets.as_ref().unwrap();
+        let Some(animation) = level.check_valid(pos.0, action, state.x_dir, assets) else {
             return;
         };
 

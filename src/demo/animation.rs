@@ -58,6 +58,10 @@ fn propagate_grid_transform(
 
         atlas.layout = anim.atlas.clone();
         atlas.index = (tick.0.fraction() * anim.frame_count as f32) as usize;
+        if state.animation.is_none() {
+            atlas.index = 0;
+        }
+
         *texture = anim.texture.clone();
 
         sprite.flip_x = state.x_dir == -1;
