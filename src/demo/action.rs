@@ -18,6 +18,8 @@ pub enum ScriptCommand {
     Idle,
     Turn,
     Jump,
+    OpenBracket,
+    CloseBracket,
 }
 
 impl ScriptCommand {
@@ -29,6 +31,8 @@ impl ScriptCommand {
             ScriptCommand::Idle => &assets.idle,
             ScriptCommand::Turn => &assets.turn,
             ScriptCommand::Jump => &assets.jump,
+            ScriptCommand::CloseBracket => unreachable!(),
+            ScriptCommand::OpenBracket => unreachable!(),
         }
     }
 

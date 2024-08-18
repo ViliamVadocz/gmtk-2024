@@ -24,7 +24,10 @@ pub(super) fn plugin(app: &mut App) {
             .run_if(in_state(Screen::Gameplay).and_then(input_just_pressed(KeyCode::Escape))),
     );
 
-    app.add_systems(Update, text_input_listener);
+    app.add_systems(
+        Update,
+        text_input_listener.run_if(in_state(Screen::Gameplay)),
+    );
 }
 
 #[derive(Component)]

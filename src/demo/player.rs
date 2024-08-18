@@ -2,6 +2,8 @@
 //! Note that this is separate from the `movement` module as that could be used
 //! for other characters as well.
 
+use std::time::Duration;
+
 use bevy::{
     ecs::{system::RunSystemOnce as _, world::Command},
     prelude::*,
@@ -33,6 +35,13 @@ pub(super) fn plugin(app: &mut App) {
             camera_follow_player.in_set(AppSet::UpdateCamera),
         ),
     );
+    app.insert_resource(PlayerState {
+        x_dir: 1,
+        animation: None,
+        sequence: vec![ScriptCommand::Walk, ScriptCommand::Climb],
+        cursor: 0,
+        autoplay: true,
+    });
 }
 
 #[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
@@ -85,13 +94,6 @@ fn spawn_player(
         },
         StateScoped(Screen::Gameplay),
     ));
-    commands.insert_resource(PlayerState {
-        x_dir: 1,
-        animation: None,
-        sequence: vec![ScriptCommand::Walk, ScriptCommand::Climb],
-        cursor: 0,
-        autoplay: true,
-    });
 }
 
 fn debug_actions(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option<ScriptCommand> {
@@ -181,36 +183,118 @@ fn action_interpreter(
         }
     }
 
-    let input: &ButtonInput<KeyCode> = &input;
-    let state: &mut PlayerState = &mut state;
-
-    let mut action = if cfg!(feature = "dev") {
-        debug_actions(input, state)
+    // check if we have manual controls to execute
+    let mut animation = if cfg!(feature = "dev") {
+        debug_actions(&input, &mut state).and_then(|action| {
+            if let ScriptCommand::Turn = action {
+                state.x_dir *= -1;
+            };
+            let assets = assets.as_ref().unwrap();
+            level.check_valid(pos.0, action, state.x_dir, assets)
+        })
     } else {
         None
     };
 
+    // check if we have script to execute
     if input.pressed(KeyCode::KeyF) || state.autoplay {
-        let new_action = state.sequence[state.cursor];
-        state.cursor = (state.cursor + 1) % state.sequence.len();
-        action = Some(new_action);
+        animation = action_interpreter_new(&mut state, &pos, &level, assets.unwrap());
     }
 
-    if let Some(action) = action {
-        let assets = assets.as_ref().unwrap();
-        let Some(animation) = level.check_valid(pos.0, action, state.x_dir, assets) else {
-            return;
-        };
-
-        if let ScriptCommand::Turn = action {
-            state.x_dir *= -1;
-        }
-
-        tick.0.reset();
+    // apply the animation and configure the timer
+    if let Some(animation) = animation {
         tick.0.set_duration(animation.duration);
         state.animation = Some(animation);
-        next_tick.send(NextTick);
+        // next_tick.send(NextTick);
+    } else {
+        tick.0.set_duration(Duration::from_secs_f32(0.1));
     }
+    tick.0.reset();
+}
+
+fn action_interpreter_new(
+    state: &mut PlayerState,
+    pos: &GridTransform,
+    level: &Level,
+    assets: Res<PlayerAssets>,
+) -> Option<AnimationResource> {
+    if state.sequence.is_empty() {
+        return None;
+    }
+
+    // Rename for convenience.
+    let PlayerState {
+        ref sequence,
+        cursor,
+        ref x_dir,
+        ..
+    } = &mut *state;
+
+    // Helper functions to clean up the interpreter code below.
+    let find_matching_open_bracket = |cursor| {
+        let mut count = 0;
+        for i in 1..=cursor {
+            match sequence[cursor - i] {
+                ScriptCommand::CloseBracket => count += 1,
+                ScriptCommand::OpenBracket if count == 0 => {
+                    return cursor - i;
+                }
+                ScriptCommand::OpenBracket => count -= 1,
+                _ => {}
+            }
+        }
+        0
+    };
+    let find_matching_close_bracket = |cursor| {
+        let mut count = 0;
+        for (i, cmd) in sequence.iter().enumerate().skip(cursor) {
+            match cmd {
+                ScriptCommand::OpenBracket => count += 1,
+                ScriptCommand::CloseBracket if count == 0 => {
+                    return (i + 1) % sequence.len();
+                }
+                ScriptCommand::CloseBracket => count -= 1,
+                _ => {}
+            }
+        }
+        sequence.len() - 1
+    };
+
+    // Prevent infinite loops by limiting the number of iterations.
+    for _ in 0..sequence.len() {
+        match sequence[*cursor] {
+            ScriptCommand::OpenBracket => {}
+            ScriptCommand::CloseBracket => {
+                // Go back to matching open bracket.
+                *cursor = find_matching_open_bracket(*cursor);
+            }
+            command => {
+                match level.check_valid(pos.0, command, *x_dir, &assets) {
+                    Some(anim) => {
+                        // Update the cursor.
+                        *cursor = (*cursor + 1) % sequence.len();
+                        // Set the animation.
+                        if let ScriptCommand::Turn = command {
+                            state.x_dir *= -1
+                        };
+
+                        return Some(anim.clone());
+                    }
+                    None => {
+                        // Skip to the end of scope.
+                        *cursor = find_matching_close_bracket(*cursor);
+                        return None;
+                    }
+                }
+            }
+        }
+        // Try the next command.
+        *cursor += 1;
+        *cursor %= sequence.len();
+    }
+
+    // No action from the script was possible.
+    None
 }
 
 fn camera_follow_player(
