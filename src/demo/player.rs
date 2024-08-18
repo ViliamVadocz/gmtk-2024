@@ -94,41 +94,35 @@ fn spawn_player(
     ));
 }
 
-fn which_action(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option<ScriptCommand> {
-    if input.pressed(KeyCode::KeyF) || state.autoplay {
-        let action = state.sequence[state.cursor];
-        state.cursor = (state.cursor + 1) % state.sequence.len();
-        return Some(action);
-    }
-    None
-    // let pressed_or_held = |key: KeyCode| input.pressed(key);
+fn debug_actions(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option<ScriptCommand> {
+    let pressed_or_held = |key: KeyCode| input.pressed(key);
 
     // Collect directional input.
-    // let mut action = None;
+    let mut action = None;
 
-    // let mut facing = 0;
-    // if pressed_or_held(KeyCode::KeyA) || pressed_or_held(KeyCode::ArrowLeft)
-    // {     facing -= 1;
-    // }
-    // if pressed_or_held(KeyCode::KeyD) || pressed_or_held(KeyCode::ArrowRight)
-    // {     facing += 1;
-    // }
-    // if facing != 0 {
-    //     if state.x_dir != facing {
-    //         return Some(PlayerAction::Turn);
-    //     }
-    //     action = Some(PlayerAction::Walk)
-    // }
-    // if pressed_or_held(KeyCode::KeyW) || pressed_or_held(KeyCode::ArrowUp) {
-    //     action = Some(PlayerAction::Climb)
-    // }
-    // if pressed_or_held(KeyCode::KeyS) || pressed_or_held(KeyCode::ArrowDown)
-    // {     action = Some(PlayerAction::Drop)
-    // }
-    // if pressed_or_held(KeyCode::Space) {
-    //     action = Some(PlayerAction::Idle)
-    // }
-    // action
+    let mut facing = 0;
+    if pressed_or_held(KeyCode::KeyA) || pressed_or_held(KeyCode::ArrowLeft) {
+        facing -= 1;
+    }
+    if pressed_or_held(KeyCode::KeyD) || pressed_or_held(KeyCode::ArrowRight) {
+        facing += 1;
+    }
+    if facing != 0 {
+        if state.x_dir != facing {
+            return Some(ScriptCommand::Turn);
+        }
+        action = Some(ScriptCommand::Walk)
+    }
+    if pressed_or_held(KeyCode::KeyW) || pressed_or_held(KeyCode::ArrowUp) {
+        action = Some(ScriptCommand::Climb)
+    }
+    if pressed_or_held(KeyCode::KeyS) || pressed_or_held(KeyCode::ArrowDown) {
+        action = Some(ScriptCommand::Drop)
+    }
+    if pressed_or_held(KeyCode::Space) {
+        action = Some(ScriptCommand::Idle)
+    }
+    action
 }
 
 fn respawn(
@@ -185,7 +179,22 @@ fn action_interpreter(
         }
     }
 
-    if let Some(action) = which_action(&input, &mut state) {
+    let input: &ButtonInput<KeyCode> = &input;
+    let state: &mut PlayerState = &mut state;
+
+    let mut action = if cfg!(feature = "dev") {
+        debug_actions(input, state)
+    } else {
+        None
+    };
+
+    if input.pressed(KeyCode::KeyF) || state.autoplay {
+        let new_action = state.sequence[state.cursor];
+        state.cursor = (state.cursor + 1) % state.sequence.len();
+        action = Some(new_action);
+    }
+
+    if let Some(action) = action {
         let assets = assets.as_ref().unwrap();
         let Some(animation) = level.check_valid(pos.0, action, state.x_dir, assets) else {
             return;
