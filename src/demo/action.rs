@@ -29,6 +29,17 @@ impl PlayerAction {
             PlayerAction::Turn => &assets.idle,
         }
     }
+
+    pub fn try_from(c: char) -> Option<Self> {
+        Some(match c.to_ascii_lowercase() {
+            'w' => PlayerAction::Walk,
+            'c' => PlayerAction::Climb,
+            'd' => PlayerAction::Drop,
+            'i' => PlayerAction::Idle,
+            't' => PlayerAction::Turn,
+            _ => return None,
+        })
+    }
 }
 
 impl Level {

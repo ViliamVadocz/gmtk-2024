@@ -6,7 +6,7 @@ use bevy_simple_text_input::TextInputSubmitEvent;
 use crate::{
     asset_tracking::LoadResource,
     audio::Music,
-    demo::{level::spawn_level as spawn_level_command, player::PlayerState},
+    demo::{action::PlayerAction, level::spawn_level as spawn_level_command, player::PlayerState},
     screens::Screen,
     theme::prelude::*,
 };
@@ -96,8 +96,16 @@ fn text_input_listener(
 ) {
     for event in events.read() {
         for mut player_state in &mut player_query {
-            // TODO: Parse into actions.
-            player_state.script = event.value.clone();
+            let new_sequence: Vec<_> = event
+                .value
+                .chars()
+                .filter_map(PlayerAction::try_from)
+                .collect();
+            if new_sequence.is_empty() {
+                continue;
+            }
+            player_state.sequence = new_sequence;
+            player_state.cursor = 0;
         }
     }
 }

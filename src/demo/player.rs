@@ -51,7 +51,6 @@ pub struct PlayerState {
 
     pub sequence: Vec<PlayerAction>,
     pub cursor: usize,
-    pub script: String, // TODO: Replace with custom type (nested enums or whatever)
 }
 
 fn spawn_player(
@@ -78,7 +77,6 @@ fn spawn_player(
             animation: None,
             sequence: vec![PlayerAction::Walk, PlayerAction::Climb],
             cursor: 0,
-            script: String::new(),
         },
         TextureAtlas {
             layout: player_assets.idle.atlas.clone(),
@@ -122,7 +120,7 @@ fn which_action(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option
     if pressed_or_held(KeyCode::Space) {
         action = Some(PlayerAction::Idle)
     }
-    return action;
+    action
 }
 
 fn record_player_directional_input(
