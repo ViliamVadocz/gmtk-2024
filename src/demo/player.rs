@@ -157,6 +157,11 @@ fn record_player_directional_input(
         editor_inactive.single_mut().0 = false;
     }
 
+    // make sure that the editor is inactive before allowing any movement
+    if !editor_inactive.single().0 {
+        return;
+    }
+
     if !tick.0.finished() {
         return;
     }
