@@ -49,7 +49,7 @@ impl Command for SpawnPlayer {
     }
 }
 
-#[derive(Component)]
+#[derive(Resource)]
 pub struct PlayerState {
     // can be 1 or -1
     pub x_dir: i32,
@@ -79,19 +79,19 @@ fn spawn_player(
             ..Default::default()
         },
         GridTransform(level.get_spawn()),
-        PlayerState {
-            x_dir: 1,
-            animation: None,
-            sequence: vec![ScriptCommand::Walk, ScriptCommand::Climb],
-            cursor: 0,
-            autoplay: true,
-        },
         TextureAtlas {
             layout: player_assets.idle.atlas.clone(),
             index: 0,
         },
         StateScoped(Screen::Gameplay),
     ));
+    commands.insert_resource(PlayerState {
+        x_dir: 1,
+        animation: None,
+        sequence: vec![ScriptCommand::Walk, ScriptCommand::Climb],
+        cursor: 0,
+        autoplay: true,
+    });
 }
 
 fn debug_actions(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option<ScriptCommand> {
@@ -126,12 +126,13 @@ fn debug_actions(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Optio
 }
 
 fn respawn(
-    mut player: Query<(&mut GridTransform, &mut PlayerState), With<Player>>,
+    mut state: ResMut<PlayerState>,
+    mut player: Query<&mut GridTransform, With<Player>>,
     input: Res<ButtonInput<KeyCode>>,
     level: Res<Level>,
     mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
 ) {
-    let Ok((mut pos, mut state)) = player.get_single_mut() else {
+    let Ok(mut pos) = player.get_single_mut() else {
         return;
     };
 
@@ -149,13 +150,14 @@ fn respawn(
 fn action_interpreter(
     input: Res<ButtonInput<KeyCode>>,
     mut tick: ResMut<AnimationTick>,
-    mut player: Query<(&mut GridTransform, &mut PlayerState), With<Player>>,
+    mut state: ResMut<PlayerState>,
+    mut player: Query<&mut GridTransform, With<Player>>,
     assets: Option<Res<PlayerAssets>>,
     mut next_tick: EventWriter<NextTick>,
     mut level: ResMut<Level>,
     editor_inactive: Query<&TextInputInactive, With<Editor>>,
 ) {
-    let Ok((mut pos, mut state)) = player.get_single_mut() else {
+    let Ok(mut pos) = player.get_single_mut() else {
         return;
     };
 

@@ -17,7 +17,7 @@ use super::{
     level::{AnimationTick, GridTransform, WorldGrid},
     player::PlayerState,
 };
-use crate::AppSet;
+use crate::{demo::player::Player, AppSet};
 
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
@@ -35,38 +35,43 @@ pub enum PlayerAnimationState {
 }
 
 fn update_animation(
-    mut q: Query<(
-        &mut Transform,
-        &GridTransform,
-        &PlayerState,
-        &mut TextureAtlas,
-        &mut Sprite,
-        &mut Handle<Image>,
-    )>,
+    state: Res<PlayerState>,
+    mut q: Query<
+        (
+            &mut Transform,
+            &GridTransform,
+            &mut TextureAtlas,
+            &mut Sprite,
+            &mut Handle<Image>,
+        ),
+        With<Player>,
+    >,
     grid: Res<WorldGrid>,
     tick: Res<AnimationTick>,
     player_assets: Option<Res<PlayerAssets>>,
 ) {
-    for (mut transform, pos, state, mut atlas, mut sprite, mut texture) in &mut q {
-        let anim = state
-            .animation
-            .as_ref()
-            .unwrap_or(&player_assets.as_ref().unwrap().idle);
+    let Ok((mut transform, pos, mut atlas, mut sprite, mut texture)) = q.get_single_mut() else {
+        return;
+    };
 
-        let new = grid.project_to_world(pos.0.as_vec2());
-        transform.translation = new.extend(transform.translation.z);
+    let anim = state
+        .animation
+        .as_ref()
+        .unwrap_or(&player_assets.as_ref().unwrap().idle);
 
-        atlas.layout = anim.atlas.clone();
-        atlas.index = (tick.0.fraction() * anim.frame_count as f32) as usize;
-        if state.animation.is_none() {
-            atlas.index = 0;
-        }
+    let new = grid.project_to_world(pos.0.as_vec2());
+    transform.translation = new.extend(transform.translation.z);
 
-        *texture = anim.texture.clone();
-
-        sprite.flip_x = state.x_dir == -1;
-        sprite.anchor = Anchor::Custom(anim.anchor.as_vec() * Vec2::new(state.x_dir as f32, 1.));
+    atlas.layout = anim.atlas.clone();
+    atlas.index = (tick.0.fraction() * anim.frame_count as f32) as usize;
+    if state.animation.is_none() {
+        atlas.index = 0;
     }
+
+    *texture = anim.texture.clone();
+
+    sprite.flip_x = state.x_dir == -1;
+    sprite.anchor = Anchor::Custom(anim.anchor.as_vec() * Vec2::new(state.x_dir as f32, 1.));
 }
 
 #[derive(Asset, Reflect, Clone)]

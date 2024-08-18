@@ -95,23 +95,21 @@ fn return_to_title_screen(mut next_screen: ResMut<NextState<Screen>>) {
 
 fn text_input_listener(
     mut events: EventReader<TextInputSubmitEvent>,
-    mut player_query: Query<&mut PlayerState>,
+    mut player_state: ResMut<PlayerState>,
     mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
 ) {
     for event in events.read() {
-        for mut player_state in &mut player_query {
-            let new_sequence: Vec<_> = event
-                .value
-                .chars()
-                .filter_map(ScriptCommand::try_from)
-                .collect();
-            if new_sequence.is_empty() {
-                continue;
-            }
-
-            editor_inactive.single_mut().0 = true;
-            player_state.sequence = new_sequence;
-            player_state.cursor = 0;
+        let new_sequence: Vec<_> = event
+            .value
+            .chars()
+            .filter_map(ScriptCommand::try_from)
+            .collect();
+        if new_sequence.is_empty() {
+            continue;
         }
+
+        editor_inactive.single_mut().0 = true;
+        player_state.sequence = new_sequence;
+        player_state.cursor = 0;
     }
 }
