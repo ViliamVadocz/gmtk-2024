@@ -14,7 +14,7 @@ use bevy_simple_text_input::TextInputInactive;
 use super::{
     action::ScriptCommand,
     animation::{AnimationResource, PlayerAssets},
-    level::{AnimationTick, GridTransform, Level, NextTick},
+    level::{AnimationTick, GridTransform, Level},
 };
 use crate::{
     asset_tracking::LoadResource,
@@ -155,7 +155,6 @@ fn action_interpreter(
     mut state: ResMut<PlayerState>,
     mut player: Query<&mut GridTransform, With<Player>>,
     assets: Option<Res<PlayerAssets>>,
-    mut next_tick: EventWriter<NextTick>,
     mut level: ResMut<Level>,
     editor_inactive: Query<&TextInputInactive, With<Editor>>,
 ) {
@@ -205,7 +204,6 @@ fn action_interpreter(
     if let Some(animation) = animation {
         tick.0.set_duration(animation.duration);
         state.animation = Some(animation);
-        // next_tick.send(NextTick);
     } else {
         tick.0.set_duration(Duration::from_secs_f32(0.1));
     }
@@ -257,7 +255,7 @@ fn action_interpreter_new(
                 _ => {}
             }
         }
-        sequence.len() - 1
+        0
     };
 
     // Prevent infinite loops by limiting the number of iterations.

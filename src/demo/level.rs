@@ -177,7 +177,7 @@ impl Level {
     }
 
     fn get_terrain(&self, pos: IVec2) -> Option<Tile> {
-        let y = self.height() - 1 - usize::try_from(pos.y).ok()?;
+        let y = usize::try_from(self.height() as i32 - 1 - pos.y).ok()?;
         self.terrain
             .get(self.row_size * y + usize::try_from(pos.x).ok()?)
             .copied()

@@ -44,6 +44,8 @@ impl ScriptCommand {
             'i' => ScriptCommand::Idle,
             't' => ScriptCommand::Turn,
             'j' => ScriptCommand::Jump,
+            '(' => ScriptCommand::OpenBracket,
+            ')' => ScriptCommand::CloseBracket,
             _ => return None,
         })
     }
