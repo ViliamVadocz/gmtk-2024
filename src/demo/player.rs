@@ -7,13 +7,18 @@ use bevy::{
     prelude::*,
     sprite::Anchor,
 };
+use bevy_simple_text_input::TextInputInactive;
 
 use super::{
     action::PlayerAction,
     animation::{AnimationResource, PlayerAssets},
     level::{GridTick, GridTransform, Level, NextTick},
 };
-use crate::{asset_tracking::LoadResource, screens::Screen, AppSet};
+use crate::{
+    asset_tracking::LoadResource,
+    screens::{gameplay::Editor, Screen},
+    AppSet,
+};
 
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<Player>();
@@ -51,7 +56,7 @@ pub struct PlayerState {
 
     pub sequence: Vec<PlayerAction>,
     pub cursor: usize,
-    just_go: bool,
+    pub just_go: bool,
 }
 
 fn spawn_player(
@@ -97,35 +102,35 @@ fn which_action(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option
         state.cursor = (state.cursor + 1) % state.sequence.len();
         return Some(action);
     }
-
-    let pressed_or_held = |key: KeyCode| input.pressed(key);
+    None
+    // let pressed_or_held = |key: KeyCode| input.pressed(key);
 
     // Collect directional input.
-    let mut action = None;
+    // let mut action = None;
 
-    let mut facing = 0;
-    if pressed_or_held(KeyCode::KeyA) || pressed_or_held(KeyCode::ArrowLeft) {
-        facing -= 1;
-    }
-    if pressed_or_held(KeyCode::KeyD) || pressed_or_held(KeyCode::ArrowRight) {
-        facing += 1;
-    }
-    if facing != 0 {
-        if state.x_dir != facing {
-            return Some(PlayerAction::Turn);
-        }
-        action = Some(PlayerAction::Walk)
-    }
-    if pressed_or_held(KeyCode::KeyW) || pressed_or_held(KeyCode::ArrowUp) {
-        action = Some(PlayerAction::Climb)
-    }
-    if pressed_or_held(KeyCode::KeyS) || pressed_or_held(KeyCode::ArrowDown) {
-        action = Some(PlayerAction::Drop)
-    }
-    if pressed_or_held(KeyCode::Space) {
-        action = Some(PlayerAction::Idle)
-    }
-    action
+    // let mut facing = 0;
+    // if pressed_or_held(KeyCode::KeyA) || pressed_or_held(KeyCode::ArrowLeft)
+    // {     facing -= 1;
+    // }
+    // if pressed_or_held(KeyCode::KeyD) || pressed_or_held(KeyCode::ArrowRight)
+    // {     facing += 1;
+    // }
+    // if facing != 0 {
+    //     if state.x_dir != facing {
+    //         return Some(PlayerAction::Turn);
+    //     }
+    //     action = Some(PlayerAction::Walk)
+    // }
+    // if pressed_or_held(KeyCode::KeyW) || pressed_or_held(KeyCode::ArrowUp) {
+    //     action = Some(PlayerAction::Climb)
+    // }
+    // if pressed_or_held(KeyCode::KeyS) || pressed_or_held(KeyCode::ArrowDown)
+    // {     action = Some(PlayerAction::Drop)
+    // }
+    // if pressed_or_held(KeyCode::Space) {
+    //     action = Some(PlayerAction::Idle)
+    // }
+    // action
 }
 
 fn record_player_directional_input(
@@ -135,6 +140,7 @@ fn record_player_directional_input(
     assets: Option<Res<PlayerAssets>>,
     mut next_tick: EventWriter<NextTick>,
     mut level: ResMut<Level>,
+    mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
 ) {
     let Ok((mut pos, mut state)) = player.get_single_mut() else {
         return;
@@ -156,6 +162,7 @@ fn record_player_directional_input(
         state.x_dir = 1;
         state.just_go = false;
         state.cursor = 0;
+        editor_inactive.single_mut().0 = false;
     }
 
     if let Some(action) = which_action(&input, &mut state) {

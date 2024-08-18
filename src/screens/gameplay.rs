@@ -1,7 +1,7 @@
 //! The screen state for the main gameplay.
 
 use bevy::{input::common_conditions::input_just_pressed, prelude::*, ui::Val::*};
-use bevy_simple_text_input::TextInputSubmitEvent;
+use bevy_simple_text_input::{TextInputInactive, TextInputSubmitEvent};
 
 use crate::{
     asset_tracking::LoadResource,
@@ -27,26 +27,25 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, text_input_listener);
 }
 
+#[derive(Component)]
+pub struct Editor;
+
 fn spawn_level(mut commands: Commands) {
     commands.add(spawn_level_command);
     commands
-        .spawn((
-            Name::new("UI Root"),
-            NodeBundle {
-                style: Style {
-                    width: Percent(100.0),
-                    height: Percent(100.0),
-                    justify_content: JustifyContent::Start,
-                    align_items: AlignItems::Center,
-                    flex_direction: FlexDirection::Column,
-                    row_gap: Px(10.0),
-                    position_type: PositionType::Absolute,
-                    ..default()
-                },
+        .spawn((Name::new("UI Root"), NodeBundle {
+            style: Style {
+                width: Percent(100.0),
+                height: Percent(100.0),
+                justify_content: JustifyContent::Start,
+                align_items: AlignItems::Center,
+                flex_direction: FlexDirection::Column,
+                row_gap: Px(10.0),
+                position_type: PositionType::Absolute,
                 ..default()
             },
-            Interaction::None,
-        ))
+            ..default()
+        }))
         .insert(StateScoped(Screen::Gameplay))
         .with_children(|children| {
             children.text_input();
@@ -97,6 +96,7 @@ fn return_to_title_screen(mut next_screen: ResMut<NextState<Screen>>) {
 fn text_input_listener(
     mut events: EventReader<TextInputSubmitEvent>,
     mut player_query: Query<&mut PlayerState>,
+    mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
 ) {
     for event in events.read() {
         for mut player_state in &mut player_query {
@@ -108,8 +108,11 @@ fn text_input_listener(
             if new_sequence.is_empty() {
                 continue;
             }
+
+            editor_inactive.single_mut().0 = true;
             player_state.sequence = new_sequence;
             player_state.cursor = 0;
+            player_state.just_go = true;
         }
     }
 }
