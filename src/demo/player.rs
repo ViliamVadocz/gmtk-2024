@@ -129,7 +129,7 @@ fn record_player_directional_input(
     mut player: Query<(&mut GridTransform, &mut PlayerState), With<Player>>,
     assets: Option<Res<PlayerAssets>>,
     mut next_tick: EventWriter<NextTick>,
-    level: Res<Level>,
+    mut level: ResMut<Level>,
 ) {
     let Ok((mut pos, mut state)) = player.get_single_mut() else {
         return;
@@ -140,6 +140,14 @@ fn record_player_directional_input(
     }
     if let Some(prev_anim) = state.animation.take() {
         pos.0 += prev_anim.final_offset(state.x_dir);
+        if level.is_checkpoint(pos.0) {
+            level.last_checkpoint = pos.0
+        }
+    }
+
+    if input.just_pressed(KeyCode::KeyR) {
+        pos.0 = level.last_checkpoint;
+        state.x_dir = 1;
     }
 
     if let Some(action) = which_action(&input, &mut state) {

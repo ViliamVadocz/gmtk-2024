@@ -117,8 +117,8 @@ pub fn spawn_level(world: &mut World) {
 pub struct Level {
     terrain: Vec<Tile>,
     row_size: usize,
-    spawn: (usize, usize),
     unlocks: [(usize, usize); 3],
+    pub last_checkpoint: IVec2,
 }
 
 #[derive(Reflect, Debug, Clone, Copy)]
@@ -151,7 +151,7 @@ impl Default for Level {
         Self {
             terrain,
             row_size: 16,
-            spawn,
+            last_checkpoint: IVec2::new(spawn.1, spawn.0),
             unlocks,
         }
     }
@@ -160,22 +160,31 @@ impl Default for Level {
 impl Level {
     /// Check whether the position is solid terrain.
     pub fn is_solid(&self, pos: IVec2) -> bool {
-        self.get_terrain(pos).unwrap_or_default()
+        self.get_terrain(pos)
+            .map(|x| matches!(x, Tile::Ground))
+            .unwrap_or_default()
+    }
+
+    /// Check whether the position is a checkpoint.
+    pub fn is_checkpoint(&self, pos: IVec2) -> bool {
+        self.get_terrain(pos)
+            .map(|x| matches!(x, Tile::CheckPoint))
+            .unwrap_or_default()
     }
 
     fn height(&self) -> usize {
         self.terrain.len() / self.row_size
     }
 
-    fn get_terrain(&self, pos: IVec2) -> Option<bool> {
+    fn get_terrain(&self, pos: IVec2) -> Option<Tile> {
         let y = self.height() - 1 - usize::try_from(pos.y).ok()?;
         self.terrain
             .get(self.row_size * y + usize::try_from(pos.x).ok()?)
-            .map(|x| matches!(x, Tile::Ground))
+            .copied()
     }
 
     pub fn get_spawn(&self) -> IVec2 {
-        IVec2::new(self.spawn.1 as i32, self.spawn.0 as i32)
+        self.last_checkpoint
     }
 }
 
