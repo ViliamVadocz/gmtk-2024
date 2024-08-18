@@ -1,6 +1,7 @@
 //! Helper traits for creating common widgets.
 
 use bevy::{ecs::system::EntityCommands, prelude::*, ui::Val::*};
+use bevy_simple_text_input::TextInputBundle;
 
 use crate::theme::{interaction::InteractionPalette, palette::*};
 
@@ -14,6 +15,9 @@ pub trait Widgets {
 
     /// Spawn a simple text label.
     fn label(&mut self, text: impl Into<String>) -> EntityCommands;
+
+    /// Spawn a text input.
+    fn text_input(&mut self) -> EntityCommands;
 }
 
 impl<T: Spawn> Widgets for T {
@@ -89,6 +93,30 @@ impl<T: Spawn> Widgets for T {
                 ..default()
             }),
         ));
+        entity
+    }
+
+    fn text_input(&mut self) -> EntityCommands {
+        let entity = self.spawn((
+            Name::new("Text Input"),
+            NodeBundle {
+                style: Style {
+                    width: Val::Px(200.0),
+                    border: UiRect::all(Val::Px(5.0)),
+                    padding: UiRect::all(Val::Px(5.0)),
+                    ..default()
+                },
+                border_color: BUTTON_PRESSED_BACKGROUND.into(),
+                background_color: BUTTON_HOVERED_BACKGROUND.into(),
+                ..default()
+            },
+            TextInputBundle::default().with_text_style(TextStyle {
+                font_size: 24.,
+                color: LABEL_TEXT,
+                ..default()
+            }),
+        ));
+
         entity
     }
 }
