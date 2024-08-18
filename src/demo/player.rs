@@ -146,6 +146,17 @@ fn record_player_directional_input(
         return;
     };
 
+    if input.just_pressed(KeyCode::KeyR) {
+        // respawn, reset all properties
+        pos.0 = level.last_checkpoint;
+        state.x_dir = 1;
+        state.just_go = false;
+        state.cursor = 0;
+        state.animation = None;
+        // allow editing again
+        editor_inactive.single_mut().0 = false;
+    }
+
     if !tick.0.finished() {
         return;
     }
@@ -154,15 +165,6 @@ fn record_player_directional_input(
         if level.is_checkpoint(pos.0) {
             level.last_checkpoint = pos.0
         }
-    }
-
-    if input.just_pressed(KeyCode::KeyR) {
-        // respawn, reset all properties
-        pos.0 = level.last_checkpoint;
-        state.x_dir = 1;
-        state.just_go = false;
-        state.cursor = 0;
-        editor_inactive.single_mut().0 = false;
     }
 
     if let Some(action) = which_action(&input, &mut state) {
