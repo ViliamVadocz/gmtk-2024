@@ -6,9 +6,9 @@ use bevy::{prelude::*, sprite::Anchor};
 use bevy_simple_text_input::TextInputInactive;
 
 use super::{
-    action::PlayerAction,
-    animation::{AnimationResource, PlayerAssets},
-    level::{GridTick, GridTransform, Level, NextTick},
+    action::ScriptCommand,
+    animation::{AnimationState, PlayerAssets},
+    level::{GridTransform, Level},
 };
 use crate::{
     asset_tracking::LoadResource,
@@ -19,29 +19,158 @@ use crate::{
 pub(super) fn plugin(app: &mut App) {
     app.register_type::<Player>();
     app.load_resource::<PlayerAssets>();
-
+    app.init_resource::<Script>();
+    app.init_resource::<Paused>();
     app.add_systems(
         Update,
         (
-            record_player_directional_input.in_set(AppSet::RecordInput),
+            (action_interpreter, respawn)
+                .chain()
+                .in_set(AppSet::DetermineAction),
+            // record_player_directional_input.in_set(AppSet::DetermineAction),
             camera_follow_player.in_set(AppSet::UpdateCamera),
-        ),
+        )
+            .run_if(in_state(Screen::Gameplay)),
     );
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
+fn action_interpreter(
+    mut player: Query<(&GridTransform, &mut AnimationState), With<Player>>,
+    mut script: ResMut<Script>,
+    level: Res<Level>,
+    assets: Res<PlayerAssets>,
+) {
+    let Ok((pos, mut state)) = player.get_single_mut() else {
+        return;
+    };
+    if script.sequence.is_empty() {
+        state.animation = None;
+        return;
+    }
+
+    // Rename for convenience.
+    let sequence = &script.sequence;
+    let mut cursor = script.cursor;
+
+    // Helper functions to clean up the interpreter code below.
+    let possible = |command: ScriptCommand| -> bool {
+        let anim = command.get_resource(&assets);
+        level.animation_is_valid(pos.0, anim, state.x_dir)
+    };
+    let find_matching_open_bracket = |cursor| {
+        let mut count = 0;
+        for i in 1..=cursor {
+            match sequence[cursor - i] {
+                ScriptCommand::CloseBracket => count += 1,
+                ScriptCommand::OpenBracket if count == 0 => {
+                    return cursor - i;
+                }
+                ScriptCommand::OpenBracket => count -= 1,
+                _ => {}
+            }
+        }
+        0
+    };
+    let find_matching_close_bracket = |cursor| {
+        let mut count = 0;
+        for (i, cmd) in sequence.iter().enumerate().skip(cursor) {
+            match cmd {
+                ScriptCommand::OpenBracket => count += 1,
+                ScriptCommand::CloseBracket if count == 0 => {
+                    return i;
+                }
+                ScriptCommand::CloseBracket => count -= 1,
+                _ => {}
+            }
+        }
+        sequence.len() - 1
+    };
+
+    // Prevent infinite loops by limiting the number of iterations.
+    for _ in 0..sequence.len() {
+        match sequence[cursor] {
+            ScriptCommand::OpenBracket => {}
+            ScriptCommand::CloseBracket => {
+                // Go back to matching open bracket.
+                cursor = find_matching_open_bracket(cursor);
+            }
+            command if possible(command) => {
+                // Update the cursor.
+                script.cursor = (cursor + 1) % sequence.len();
+                // Set the animation.
+                let anim = command.get_resource(&assets);
+                if let ScriptCommand::Turn = command {
+                    state.x_dir *= -1
+                };
+                state.animation = Some(anim.clone());
+                return;
+            }
+            _command => {
+                // Skip to the end of scope.
+                cursor = find_matching_close_bracket(cursor);
+            }
+        }
+        // Try the next command.
+        cursor += 1;
+        cursor %= sequence.len();
+    }
+
+    // No action from the script was possible.
+    state.animation = None;
+}
+
+fn respawn(
+    input: Res<ButtonInput<KeyCode>>,
+    level: Res<Level>,
+    mut paused: ResMut<Paused>,
+    mut script: ResMut<Script>,
+    mut player: Query<(&mut GridTransform, &mut AnimationState)>,
+    mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
+) {
+    let Ok((mut pos, mut state)) = player.get_single_mut() else {
+        return;
+    };
+    if input.just_pressed(KeyCode::KeyR) {
+        // respawn, reset all properties
+        pos.0 = level.last_checkpoint; // TODO: decouple last checkpoint from level resource?
+        state.x_dir = 1;
+        paused.0 = true;
+        state.animation = None;
+        script.cursor = 0;
+        // allow editing again
+        editor_inactive.single_mut().0 = false;
+    }
+}
+
+/// Marker component for the player.
+#[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
 pub struct Player;
 
-#[derive(Component)]
-pub struct PlayerState {
-    // can be 1 or -1
-    pub x_dir: i32,
-    pub animation: Option<AnimationResource>,
-
-    pub sequence: Vec<PlayerAction>,
+/// The state of the robot script.
+#[derive(Resource)]
+pub struct Script {
+    pub sequence: Vec<ScriptCommand>,
     pub cursor: usize,
-    pub just_go: bool,
+}
+
+impl Default for Script {
+    fn default() -> Self {
+        Self {
+            sequence: vec![ScriptCommand::Walk, ScriptCommand::Climb],
+            cursor: 0,
+        }
+    }
+}
+
+/// Whether the script execution is paused.
+#[derive(Resource)]
+pub struct Paused(pub bool);
+
+impl Default for Paused {
+    fn default() -> Self {
+        Self(true)
+    }
 }
 
 pub fn spawn_player(mut commands: Commands, player_assets: Res<PlayerAssets>, level: Res<Level>) {
@@ -58,12 +187,9 @@ pub fn spawn_player(mut commands: Commands, player_assets: Res<PlayerAssets>, le
             ..Default::default()
         },
         GridTransform(level.get_spawn()),
-        PlayerState {
+        AnimationState {
             x_dir: 1,
             animation: None,
-            sequence: vec![PlayerAction::Walk, PlayerAction::Climb],
-            cursor: 0,
-            just_go: false,
         },
         TextureAtlas {
             layout: player_assets.idle.atlas.clone(),
@@ -71,97 +197,6 @@ pub fn spawn_player(mut commands: Commands, player_assets: Res<PlayerAssets>, le
         },
         StateScoped(Screen::Gameplay),
     ));
-}
-
-fn which_action(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option<PlayerAction> {
-    if input.just_pressed(KeyCode::KeyG) {
-        state.just_go = !state.just_go;
-    }
-    if input.pressed(KeyCode::KeyF) || state.just_go {
-        let action = state.sequence[state.cursor];
-        state.cursor = (state.cursor + 1) % state.sequence.len();
-        return Some(action);
-    }
-    None
-    // let pressed_or_held = |key: KeyCode| input.pressed(key);
-
-    // Collect directional input.
-    // let mut action = None;
-
-    // let mut facing = 0;
-    // if pressed_or_held(KeyCode::KeyA) || pressed_or_held(KeyCode::ArrowLeft)
-    // {     facing -= 1;
-    // }
-    // if pressed_or_held(KeyCode::KeyD) || pressed_or_held(KeyCode::ArrowRight)
-    // {     facing += 1;
-    // }
-    // if facing != 0 {
-    //     if state.x_dir != facing {
-    //         return Some(PlayerAction::Turn);
-    //     }
-    //     action = Some(PlayerAction::Walk)
-    // }
-    // if pressed_or_held(KeyCode::KeyW) || pressed_or_held(KeyCode::ArrowUp) {
-    //     action = Some(PlayerAction::Climb)
-    // }
-    // if pressed_or_held(KeyCode::KeyS) || pressed_or_held(KeyCode::ArrowDown)
-    // {     action = Some(PlayerAction::Drop)
-    // }
-    // if pressed_or_held(KeyCode::Space) {
-    //     action = Some(PlayerAction::Idle)
-    // }
-    // action
-}
-
-fn record_player_directional_input(
-    input: Res<ButtonInput<KeyCode>>,
-    mut tick: ResMut<GridTick>,
-    mut player: Query<(&mut GridTransform, &mut PlayerState), With<Player>>,
-    assets: Option<Res<PlayerAssets>>,
-    mut next_tick: EventWriter<NextTick>,
-    mut level: ResMut<Level>,
-    mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
-) {
-    let Ok((mut pos, mut state)) = player.get_single_mut() else {
-        return;
-    };
-
-    if input.just_pressed(KeyCode::KeyR) {
-        // respawn, reset all properties
-        pos.0 = level.last_checkpoint;
-        state.x_dir = 1;
-        state.just_go = false;
-        state.cursor = 0;
-        state.animation = None;
-        // allow editing again
-        editor_inactive.single_mut().0 = false;
-    }
-
-    if !tick.0.finished() {
-        return;
-    }
-    if let Some(prev_anim) = state.animation.take() {
-        pos.0 += prev_anim.final_offset(state.x_dir);
-        if level.is_checkpoint(pos.0) {
-            level.last_checkpoint = pos.0
-        }
-    }
-
-    if let Some(action) = which_action(&input, &mut state) {
-        let assets = assets.as_ref().unwrap();
-        let Some(animation) = level.check_valid(pos.0, action, state.x_dir, assets) else {
-            return;
-        };
-
-        if let PlayerAction::Turn = action {
-            state.x_dir *= -1;
-        }
-
-        tick.0.reset();
-        tick.0.set_duration(animation.duration);
-        state.animation = Some(animation);
-        next_tick.send(NextTick);
-    }
 }
 
 fn camera_follow_player(

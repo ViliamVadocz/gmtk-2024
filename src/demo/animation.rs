@@ -14,15 +14,22 @@ use bevy::{
 
 use super::{
     action::{DOWN, RIGHT, UP},
-    level::{GridTick, GridTransform, WorldGrid},
-    player::PlayerState,
+    level::{GridTransform, WorldGrid},
 };
-use crate::AppSet;
+use crate::{screens::Screen, AppSet};
 
 pub(super) fn plugin(app: &mut App) {
+    app.insert_resource(AnimationTick(Timer::from_seconds(1.0, TimerMode::Once)));
+    app.add_event::<TickEvent>();
     app.add_systems(
         Update,
-        propagate_grid_transform.in_set(AppSet::PropagateGridTransform),
+        (
+            update_tick_timer.in_set(AppSet::TickTimers),
+            (update_grid_position, update_animation)
+                .chain()
+                .in_set(AppSet::UpdateAnimationAndTransform),
+        )
+            .run_if(in_state(Screen::Gameplay)),
     );
 }
 
@@ -34,20 +41,34 @@ pub enum PlayerAnimationState {
     Idle(usize),
 }
 
-fn propagate_grid_transform(
+fn update_grid_position(
+    mut query: Query<(&AnimationState, &mut GridTransform)>,
+    mut event_reader: EventReader<TickEvent>,
+) {
+    for TickEvent in event_reader.read() {
+        for (state, mut pos) in &mut query {
+            if let Some(anim) = &state.animation {
+                pos.0 += anim.final_offset(state.x_dir);
+            }
+        }
+    }
+}
+
+fn update_animation(
     mut q: Query<(
         &mut Transform,
         &GridTransform,
-        &PlayerState,
+        &AnimationState,
         &mut TextureAtlas,
         &mut Sprite,
         &mut Handle<Image>,
     )>,
     grid: Res<WorldGrid>,
-    tick: Res<GridTick>,
+    tick: Res<AnimationTick>,
     player_assets: Option<Res<PlayerAssets>>,
 ) {
     for (mut transform, pos, state, mut atlas, mut sprite, mut texture) in &mut q {
+        // Get the current animation resource or default to Idle.
         let anim = state
             .animation
             .as_ref()
@@ -203,4 +224,28 @@ impl FromWorld for PlayerAssets {
             },
         }
     }
+}
+
+#[derive(Resource)]
+pub struct AnimationTick(pub Timer);
+
+pub fn update_tick_timer(
+    time: Res<Time>,
+    mut tick: ResMut<AnimationTick>,
+    mut event_writer: EventWriter<TickEvent>,
+) {
+    tick.0.tick(time.delta());
+    if tick.0.just_finished() {
+        event_writer.send_default();
+    }
+}
+
+#[derive(Event, Default)]
+pub struct TickEvent;
+
+#[derive(Component)]
+pub struct AnimationState {
+    // can be 1 or -1
+    pub x_dir: i32,
+    pub animation: Option<AnimationResource>,
 }

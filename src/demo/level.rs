@@ -7,21 +7,22 @@ use bevy::{
 };
 use bevy_ecs_tilemap::prelude::*;
 
-use crate::{asset_tracking::LoadResource, demo::player::spawn_player, AppSet};
+use super::{animation::TickEvent, player::Player};
+use crate::{asset_tracking::LoadResource, demo::player::spawn_player, screens::Screen, AppSet};
 
 pub(super) fn plugin(app: &mut App) {
-    // No setup required for this plugin.
-    // It's still good to have a function here so that we can add some setup
-    // later if needed.
-    app.add_systems(Update, update_tick_timer.in_set(AppSet::TickTimers));
     app.insert_resource(WorldGrid {
         origin: Vec2::splat(0.),
         size: Vec2::splat(64.),
     });
-    app.add_event::<NextTick>();
-    app.insert_resource(GridTick(Timer::from_seconds(0.2, TimerMode::Once)));
     app.init_resource::<Level>();
     app.load_resource::<LevelAssets>();
+    app.add_systems(
+        Update,
+        update_checkpoint
+            .in_set(AppSet::UpdateCheckpoint)
+            .run_if(in_state(Screen::Gameplay)),
+    );
 }
 
 #[derive(Resource, Asset, Reflect, Clone)]
@@ -203,12 +204,16 @@ impl WorldGrid {
 #[derive(Component)]
 pub struct GridTransform(pub IVec2);
 
-#[derive(Resource)]
-pub struct GridTick(pub Timer);
-
-pub fn update_tick_timer(time: Res<Time>, mut tick: ResMut<GridTick>) {
-    tick.0.tick(time.delta());
+fn update_checkpoint(
+    query: Query<&GridTransform, With<Player>>,
+    mut level: ResMut<Level>,
+    mut event_reader: EventReader<TickEvent>,
+) {
+    for TickEvent in event_reader.read() {
+        for pos in &query {
+            if level.is_checkpoint(pos.0) {
+                level.last_checkpoint = pos.0;
+            }
+        }
+    }
 }
-
-#[derive(Event)]
-pub struct NextTick;

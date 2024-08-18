@@ -21,10 +21,11 @@ impl Plugin for AppPlugin {
         app.configure_sets(
             Update,
             (
+                AppSet::DetermineAction,
                 AppSet::TickTimers,
-                AppSet::RecordInput,
                 AppSet::Update,
-                AppSet::PropagateGridTransform,
+                AppSet::UpdateAnimationAndTransform,
+                AppSet::UpdateCheckpoint,
                 AppSet::UpdateCamera,
             )
                 .chain(),
@@ -56,7 +57,7 @@ impl Plugin for AppPlugin {
                 })
                 .set(AudioPlugin {
                     global_volume: GlobalVolume {
-                        volume: Volume::new(0.1),
+                        volume: Volume::new(0.0),
                     },
                     ..default()
                 }),
@@ -84,13 +85,11 @@ impl Plugin for AppPlugin {
 /// call above.
 #[derive(SystemSet, Debug, Clone, Copy, Eq, PartialEq, Hash, PartialOrd, Ord)]
 enum AppSet {
-    /// Tick timers.
+    DetermineAction,
     TickTimers,
-    /// Record player input.
-    RecordInput,
-    /// Do everything else (consider splitting this into further variants).
     Update,
-    PropagateGridTransform,
+    UpdateAnimationAndTransform,
+    UpdateCheckpoint,
     UpdateCamera,
 }
 
