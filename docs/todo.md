@@ -1,9 +1,6 @@
 # TODO
 
 - checkpoints
-    - reaching a checkpoint sets spawn
-    - pressing R / button resets to spawn
-    - respawn always facing right / when reaching checkpoint
     - unlocks
 - progress resource
     - text limit
@@ -12,9 +9,7 @@
     - saving state (browser storage, file, idk)
 - gameplay
     - debug movement only with dev mode
-    - if press enter, it should just go until you press R or reach another checkpoint
     - drop arbitrarily far down
-    - advance one tick at a time
     - speed up simulation?
 - obstacles
     - hazards (collision = reset)

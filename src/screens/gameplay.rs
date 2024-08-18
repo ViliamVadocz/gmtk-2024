@@ -6,7 +6,7 @@ use bevy_simple_text_input::{TextInputInactive, TextInputSubmitEvent};
 use crate::{
     asset_tracking::LoadResource,
     audio::Music,
-    demo::{action::PlayerAction, level::spawn_level as spawn_level_command, player::PlayerState},
+    demo::{action::ScriptCommand, level::spawn_level as spawn_level_command, player::PlayerState},
     screens::Screen,
     theme::prelude::*,
 };
@@ -103,7 +103,7 @@ fn text_input_listener(
             let new_sequence: Vec<_> = event
                 .value
                 .chars()
-                .filter_map(PlayerAction::try_from)
+                .filter_map(ScriptCommand::try_from)
                 .collect();
             if new_sequence.is_empty() {
                 continue;

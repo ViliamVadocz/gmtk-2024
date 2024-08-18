@@ -10,9 +10,9 @@ use bevy::{
 use bevy_simple_text_input::TextInputInactive;
 
 use super::{
-    action::PlayerAction,
+    action::ScriptCommand,
     animation::{AnimationResource, PlayerAssets},
-    level::{GridTick, GridTransform, Level, NextTick},
+    level::{AnimationTick, GridTransform, Level, NextTick},
 };
 use crate::{
     asset_tracking::LoadResource,
@@ -28,7 +28,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            record_player_directional_input.in_set(AppSet::RecordInput),
+            respawn_and_action_interpreter.in_set(AppSet::RecordInput),
             camera_follow_player.in_set(AppSet::UpdateCamera),
         ),
     );
@@ -54,7 +54,7 @@ pub struct PlayerState {
     pub x_dir: i32,
     pub animation: Option<AnimationResource>,
 
-    pub sequence: Vec<PlayerAction>,
+    pub sequence: Vec<ScriptCommand>,
     pub cursor: usize,
     pub autoplay: bool,
 }
@@ -81,7 +81,7 @@ fn spawn_player(
         PlayerState {
             x_dir: 1,
             animation: None,
-            sequence: vec![PlayerAction::Walk, PlayerAction::Climb],
+            sequence: vec![ScriptCommand::Walk, ScriptCommand::Climb],
             cursor: 0,
             autoplay: true,
         },
@@ -93,7 +93,7 @@ fn spawn_player(
     ));
 }
 
-fn which_action(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option<PlayerAction> {
+fn which_action(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option<ScriptCommand> {
     if input.pressed(KeyCode::KeyF) || state.autoplay {
         let action = state.sequence[state.cursor];
         state.cursor = (state.cursor + 1) % state.sequence.len();
@@ -130,9 +130,9 @@ fn which_action(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option
     // action
 }
 
-fn record_player_directional_input(
+fn respawn_and_action_interpreter(
     input: Res<ButtonInput<KeyCode>>,
-    mut tick: ResMut<GridTick>,
+    mut tick: ResMut<AnimationTick>,
     mut player: Query<(&mut GridTransform, &mut PlayerState), With<Player>>,
     assets: Option<Res<PlayerAssets>>,
     mut next_tick: EventWriter<NextTick>,
@@ -179,7 +179,7 @@ fn record_player_directional_input(
             return;
         };
 
-        if let PlayerAction::Turn = action {
+        if let ScriptCommand::Turn = action {
             state.x_dir *= -1;
         }
 

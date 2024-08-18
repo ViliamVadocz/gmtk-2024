@@ -19,7 +19,7 @@ pub(super) fn plugin(app: &mut App) {
         size: Vec2::splat(64.),
     });
     app.add_event::<NextTick>();
-    app.insert_resource(GridTick(Timer::from_seconds(0.2, TimerMode::Once)));
+    app.insert_resource(AnimationTick(Timer::from_seconds(0.2, TimerMode::Once)));
     app.init_resource::<Level>();
     app.load_resource::<LevelAssets>();
 }
@@ -204,9 +204,9 @@ impl WorldGrid {
 pub struct GridTransform(pub IVec2);
 
 #[derive(Resource)]
-pub struct GridTick(pub Timer);
+pub struct AnimationTick(pub Timer);
 
-pub fn update_tick_timer(time: Res<Time>, mut tick: ResMut<GridTick>) {
+pub fn update_tick_timer(time: Res<Time>, mut tick: ResMut<AnimationTick>) {
     tick.0.tick(time.delta());
 }
 

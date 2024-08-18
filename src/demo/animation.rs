@@ -14,7 +14,7 @@ use bevy::{
 
 use super::{
     action::{DOWN, RIGHT, UP},
-    level::{GridTick, GridTransform, WorldGrid},
+    level::{AnimationTick, GridTransform, WorldGrid},
     player::PlayerState,
 };
 use crate::AppSet;
@@ -22,7 +22,7 @@ use crate::AppSet;
 pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
-        propagate_grid_transform.in_set(AppSet::PropagateGridTransform),
+        update_animation.in_set(AppSet::PropagateGridTransform),
     );
 }
 
@@ -34,7 +34,7 @@ pub enum PlayerAnimationState {
     Idle(usize),
 }
 
-fn propagate_grid_transform(
+fn update_animation(
     mut q: Query<(
         &mut Transform,
         &GridTransform,
@@ -44,7 +44,7 @@ fn propagate_grid_transform(
         &mut Handle<Image>,
     )>,
     grid: Res<WorldGrid>,
-    tick: Res<GridTick>,
+    tick: Res<AnimationTick>,
     player_assets: Option<Res<PlayerAssets>>,
 ) {
     for (mut transform, pos, state, mut atlas, mut sprite, mut texture) in &mut q {
