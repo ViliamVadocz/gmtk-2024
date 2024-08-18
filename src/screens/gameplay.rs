@@ -1,6 +1,6 @@
 //! The screen state for the main gameplay.
 
-use bevy::{input::common_conditions::input_just_pressed, prelude::*, ui::Val::*};
+use bevy::{prelude::*, ui::Val::*};
 use bevy_simple_text_input::{TextInputInactive, TextInputSubmitEvent};
 
 use crate::{
@@ -17,12 +17,6 @@ pub(super) fn plugin(app: &mut App) {
     app.load_resource::<GameplayMusic>();
     app.add_systems(OnEnter(Screen::Gameplay), play_gameplay_music);
     app.add_systems(OnExit(Screen::Gameplay), stop_music);
-
-    app.add_systems(
-        Update,
-        return_to_title_screen
-            .run_if(in_state(Screen::Gameplay).and_then(input_just_pressed(KeyCode::Escape))),
-    );
 
     app.add_systems(
         Update,
@@ -90,10 +84,6 @@ fn stop_music(mut commands: Commands, mut music: ResMut<GameplayMusic>) {
     if let Some(entity) = music.entity.take() {
         commands.entity(entity).despawn_recursive();
     }
-}
-
-fn return_to_title_screen(mut next_screen: ResMut<NextState<Screen>>) {
-    next_screen.set(Screen::Title);
 }
 
 fn text_input_listener(
