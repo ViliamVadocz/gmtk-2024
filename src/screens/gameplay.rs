@@ -112,7 +112,6 @@ fn text_input_listener(
             editor_inactive.single_mut().0 = true;
             player_state.sequence = new_sequence;
             player_state.cursor = 0;
-            player_state.just_go = true;
         }
     }
 }

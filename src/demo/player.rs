@@ -56,7 +56,7 @@ pub struct PlayerState {
 
     pub sequence: Vec<PlayerAction>,
     pub cursor: usize,
-    pub just_go: bool,
+    pub autoplay: bool,
 }
 
 fn spawn_player(
@@ -83,7 +83,7 @@ fn spawn_player(
             animation: None,
             sequence: vec![PlayerAction::Walk, PlayerAction::Climb],
             cursor: 0,
-            just_go: false,
+            autoplay: true,
         },
         TextureAtlas {
             layout: player_assets.idle.atlas.clone(),
@@ -94,10 +94,7 @@ fn spawn_player(
 }
 
 fn which_action(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option<PlayerAction> {
-    if input.just_pressed(KeyCode::KeyG) {
-        state.just_go = !state.just_go;
-    }
-    if input.pressed(KeyCode::KeyF) || state.just_go {
+    if input.pressed(KeyCode::KeyF) || state.autoplay {
         let action = state.sequence[state.cursor];
         state.cursor = (state.cursor + 1) % state.sequence.len();
         return Some(action);
@@ -150,11 +147,15 @@ fn record_player_directional_input(
         // respawn, reset all properties
         pos.0 = level.last_checkpoint;
         state.x_dir = 1;
-        state.just_go = false;
         state.cursor = 0;
         state.animation = None;
         // allow editing again
         editor_inactive.single_mut().0 = false;
+    }
+
+    // toggle autoplay
+    if input.just_pressed(KeyCode::KeyG) {
+        state.autoplay = !state.autoplay;
     }
 
     // make sure that the editor is inactive before allowing any movement
