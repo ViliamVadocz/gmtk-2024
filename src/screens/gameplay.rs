@@ -30,19 +30,23 @@ pub(super) fn plugin(app: &mut App) {
 fn spawn_level(mut commands: Commands) {
     commands.add(spawn_level_command);
     commands
-        .spawn((Name::new("UI Root"), NodeBundle {
-            style: Style {
-                width: Percent(100.0),
-                height: Percent(100.0),
-                justify_content: JustifyContent::Start,
-                align_items: AlignItems::Center,
-                flex_direction: FlexDirection::Column,
-                row_gap: Px(10.0),
-                position_type: PositionType::Absolute,
+        .spawn((
+            Name::new("UI Root"),
+            NodeBundle {
+                style: Style {
+                    width: Percent(100.0),
+                    height: Percent(100.0),
+                    justify_content: JustifyContent::Start,
+                    align_items: AlignItems::Center,
+                    flex_direction: FlexDirection::Column,
+                    row_gap: Px(10.0),
+                    position_type: PositionType::Absolute,
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        }))
+            Interaction::None,
+        ))
         .insert(StateScoped(Screen::Gameplay))
         .with_children(|children| {
             children.text_input();

@@ -12,7 +12,6 @@ use bevy::{
     prelude::*,
 };
 use bevy_ecs_tilemap::TilemapPlugin;
-use bevy_simple_text_input::TextInputPlugin;
 
 pub struct AppPlugin;
 
@@ -65,7 +64,6 @@ impl Plugin for AppPlugin {
 
         // External plugins from dependencies.
         app.add_plugins(TilemapPlugin);
-        app.add_plugins(TextInputPlugin);
 
         // Add other plugins.
         app.add_plugins((

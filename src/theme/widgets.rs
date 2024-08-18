@@ -1,7 +1,7 @@
 //! Helper traits for creating common widgets.
 
 use bevy::{ecs::system::EntityCommands, prelude::*, ui::Val::*};
-use bevy_simple_text_input::TextInputBundle;
+use bevy_simple_text_input::{TextInputBundle, TextInputInactive, TextInputSettings};
 
 use crate::theme::{interaction::InteractionPalette, palette::*};
 
@@ -108,16 +108,40 @@ impl<T: Spawn> Widgets for T {
                 },
                 border_color: BUTTON_PRESSED_BACKGROUND.into(),
                 background_color: BUTTON_HOVERED_BACKGROUND.into(),
+                focus_policy: bevy::ui::FocusPolicy::Block,
                 ..default()
             },
-            TextInputBundle::default().with_text_style(TextStyle {
-                font_size: 24.,
-                color: LABEL_TEXT,
-                ..default()
-            }),
+            TextInputBundle::default()
+                .with_text_style(TextStyle {
+                    font_size: 24.,
+                    color: LABEL_TEXT,
+                    ..default()
+                })
+                .with_inactive(true)
+                .with_settings(TextInputSettings {
+                    retain_on_submit: true,
+                    ..default()
+                }),
         ));
 
         entity
+    }
+}
+
+pub fn focus(
+    query: Query<(Entity, &Interaction), Changed<Interaction>>,
+    mut text_input_query: Query<(Entity, &mut TextInputInactive)>,
+) {
+    for (interaction_entity, interaction) in &query {
+        if *interaction == Interaction::Pressed {
+            for (entity, mut inactive) in &mut text_input_query {
+                if entity == interaction_entity {
+                    inactive.0 = false;
+                } else {
+                    inactive.0 = true;
+                }
+            }
+        }
     }
 }
 
