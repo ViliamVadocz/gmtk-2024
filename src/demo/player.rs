@@ -51,6 +51,7 @@ pub struct PlayerState {
 
     pub sequence: Vec<PlayerAction>,
     pub cursor: usize,
+    just_go: bool,
 }
 
 fn spawn_player(
@@ -77,6 +78,7 @@ fn spawn_player(
             animation: None,
             sequence: vec![PlayerAction::Walk, PlayerAction::Climb],
             cursor: 0,
+            just_go: false,
         },
         TextureAtlas {
             layout: player_assets.idle.atlas.clone(),
@@ -87,7 +89,10 @@ fn spawn_player(
 }
 
 fn which_action(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option<PlayerAction> {
-    if input.pressed(KeyCode::KeyF) {
+    if input.just_pressed(KeyCode::KeyG) {
+        state.just_go = !state.just_go;
+    }
+    if input.pressed(KeyCode::KeyF) || state.just_go {
         let action = state.sequence[state.cursor];
         state.cursor = (state.cursor + 1) % state.sequence.len();
         return Some(action);
@@ -146,8 +151,11 @@ fn record_player_directional_input(
     }
 
     if input.just_pressed(KeyCode::KeyR) {
+        // respawn, reset all properties
         pos.0 = level.last_checkpoint;
         state.x_dir = 1;
+        state.just_go = false;
+        state.cursor = 0;
     }
 
     if let Some(action) = which_action(&input, &mut state) {
