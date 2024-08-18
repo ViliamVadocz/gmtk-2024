@@ -28,7 +28,8 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(
         Update,
         (
-            respawn_and_action_interpreter.in_set(AppSet::RecordInput),
+            respawn,
+            action_interpreter.in_set(AppSet::RecordInput),
             camera_follow_player.in_set(AppSet::UpdateCamera),
         ),
     );
@@ -130,13 +131,10 @@ fn which_action(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option
     // action
 }
 
-fn respawn_and_action_interpreter(
-    input: Res<ButtonInput<KeyCode>>,
-    mut tick: ResMut<AnimationTick>,
+fn respawn(
     mut player: Query<(&mut GridTransform, &mut PlayerState), With<Player>>,
-    assets: Option<Res<PlayerAssets>>,
-    mut next_tick: EventWriter<NextTick>,
-    mut level: ResMut<Level>,
+    input: Res<ButtonInput<KeyCode>>,
+    level: Res<Level>,
     mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
 ) {
     let Ok((mut pos, mut state)) = player.get_single_mut() else {
@@ -152,6 +150,20 @@ fn respawn_and_action_interpreter(
         // allow editing again
         editor_inactive.single_mut().0 = false;
     }
+}
+
+fn action_interpreter(
+    input: Res<ButtonInput<KeyCode>>,
+    mut tick: ResMut<AnimationTick>,
+    mut player: Query<(&mut GridTransform, &mut PlayerState), With<Player>>,
+    assets: Option<Res<PlayerAssets>>,
+    mut next_tick: EventWriter<NextTick>,
+    mut level: ResMut<Level>,
+    editor_inactive: Query<&TextInputInactive, With<Editor>>,
+) {
+    let Ok((mut pos, mut state)) = player.get_single_mut() else {
+        return;
+    };
 
     // toggle autoplay
     if input.just_pressed(KeyCode::KeyG) {
