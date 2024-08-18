@@ -8,18 +8,11 @@
     - enforce restrictions
     - saving state (browser storage, file, idk)
 - gameplay
-    - debug movement only with dev mode
     - drop arbitrarily far down
     - speed up simulation?
 - obstacles
     - hazards (collision = reset)
     - movement on tick / action
-- action interpreter
-    - if action fails, go to start of scope
-    - brackets for scope
-        - parse brackets in text box
-        - when fail, skip the rest of actions in brackets (seek until matching close-bracket)
-        - if reached close-bracket, seek matching open-bracket
 - level
     - hardcode it / make a level parser
 
@@ -39,6 +32,8 @@
     - font
 - UI
     - action selection
+    - show action cursor during play
+    - textbox for "invalid input" (mismatched brackets, unknown letters)
     - main menu pretty
     - logo / icon (splash)
     - credits
@@ -50,4 +45,7 @@
     - tutorial (in text?)
     - big signs in BG explaining with pictures
     - options screen for remapping controls (accessibility)
+
+
+(" (jwj))wc "
 
