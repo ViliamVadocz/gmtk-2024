@@ -10,11 +10,13 @@ pub const DOWN: IVec2 = IVec2::new(0, -1);
 pub const LEFT: IVec2 = IVec2::new(-1, 0);
 pub const RIGHT: IVec2 = IVec2::new(1, 0);
 
+#[derive(Clone, Copy)]
 pub enum PlayerAction {
     Walk,
     Climb,
     Drop,
     Idle,
+    Turn,
 }
 
 impl PlayerAction {
@@ -24,6 +26,7 @@ impl PlayerAction {
             PlayerAction::Climb => &assets.climb,
             PlayerAction::Drop => &assets.drop,
             PlayerAction::Idle => &assets.idle,
+            PlayerAction::Turn => &assets.idle,
         }
     }
 }
@@ -52,6 +55,7 @@ impl PlayerAction {
             PlayerAction::Climb => vec![UP, UP + RIGHT],
             PlayerAction::Drop => vec![RIGHT, DOWN + RIGHT],
             PlayerAction::Idle => vec![],
+            PlayerAction::Turn => vec![],
         }
         .into_iter()
     }

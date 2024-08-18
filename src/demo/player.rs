@@ -48,6 +48,8 @@ pub struct PlayerState {
     // can be 1 or -1
     pub x_dir: i32,
     pub animation: Option<AnimationResource>,
+    pub sequence: Vec<PlayerAction>,
+    pub cursor: usize,
 }
 
 fn spawn_player(
@@ -72,6 +74,8 @@ fn spawn_player(
         PlayerState {
             x_dir: 1,
             animation: None,
+            sequence: vec![PlayerAction::Walk, PlayerAction::Climb],
+            cursor: 0,
         },
         TextureAtlas {
             layout: player_assets.idle.atlas.clone(),
@@ -79,6 +83,43 @@ fn spawn_player(
         },
         StateScoped(Screen::Gameplay),
     ));
+}
+
+fn which_action(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option<PlayerAction> {
+    if input.pressed(KeyCode::KeyF) {
+        let action = state.sequence[state.cursor];
+        state.cursor = (state.cursor + 1) % state.sequence.len();
+        return Some(action);
+    }
+
+    let pressed_or_held = |key: KeyCode| input.pressed(key);
+
+    // Collect directional input.
+    let mut action = None;
+
+    let mut facing = 0;
+    if pressed_or_held(KeyCode::KeyA) || pressed_or_held(KeyCode::ArrowLeft) {
+        facing -= 1;
+    }
+    if pressed_or_held(KeyCode::KeyD) || pressed_or_held(KeyCode::ArrowRight) {
+        facing += 1;
+    }
+    if facing != 0 {
+        if state.x_dir != facing {
+            return Some(PlayerAction::Turn);
+        }
+        action = Some(PlayerAction::Walk)
+    }
+    if pressed_or_held(KeyCode::KeyW) || pressed_or_held(KeyCode::ArrowUp) {
+        action = Some(PlayerAction::Climb)
+    }
+    if pressed_or_held(KeyCode::KeyS) || pressed_or_held(KeyCode::ArrowDown) {
+        action = Some(PlayerAction::Drop)
+    }
+    if pressed_or_held(KeyCode::Space) {
+        action = Some(PlayerAction::Idle)
+    }
+    return action;
 }
 
 fn record_player_directional_input(
@@ -100,38 +141,15 @@ fn record_player_directional_input(
         pos.0 += prev_anim.final_offset(state.x_dir);
     }
 
-    let pressed_or_held =
-        |key: KeyCode| tick.0.finished() && input.pressed(key) || input.just_pressed(key);
-
-    // Collect directional input.
-    let mut action = None;
-
-    let mut facing = 0;
-    if pressed_or_held(KeyCode::KeyA) || pressed_or_held(KeyCode::ArrowLeft) {
-        facing -= 1;
-    }
-    if pressed_or_held(KeyCode::KeyD) || pressed_or_held(KeyCode::ArrowRight) {
-        facing += 1;
-    }
-    if facing != 0 {
-        state.x_dir = facing;
-        action = Some(PlayerAction::Walk)
-    }
-    if pressed_or_held(KeyCode::KeyW) || pressed_or_held(KeyCode::ArrowUp) {
-        action = Some(PlayerAction::Climb)
-    }
-    if pressed_or_held(KeyCode::KeyS) || pressed_or_held(KeyCode::ArrowDown) {
-        action = Some(PlayerAction::Drop)
-    }
-    if pressed_or_held(KeyCode::Space) {
-        action = Some(PlayerAction::Idle)
-    }
-
-    if let Some(action) = action {
+    if let Some(action) = which_action(&input, &mut state) {
         let assets = assets.as_ref().unwrap();
         let Some(animation) = level.check_valid(pos.0, action, state.x_dir, assets) else {
             return;
         };
+
+        if let PlayerAction::Turn = action {
+            state.x_dir *= -1;
+        }
 
         tick.0.reset();
         tick.0.set_duration(animation.duration);
