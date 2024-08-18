@@ -66,15 +66,21 @@ pub fn spawn_level(world: &mut World) {
             let mut tile_storage = TileStorage::empty(map_size);
             let tilemap_entity = commands.spawn_empty().id();
 
-            for (i, &solid) in level.terrain.iter().enumerate() {
+            for (i, &tile) in level.terrain.iter().enumerate() {
                 let x = (i % level.row_size) as u32;
                 let y = map_size.y - 1 - (i / level.row_size) as u32;
                 let tile_pos = TilePos { x, y };
+
+                let texture_index = match tile {
+                    Tile::CheckPoint => 1,
+                    _ => 0,
+                };
                 let tile_entity = commands
                     .spawn(TileBundle {
                         position: tile_pos,
                         tilemap_id: TilemapId(tilemap_entity),
-                        visible: TileVisible(solid),
+                        visible: TileVisible(matches!(tile, Tile::CheckPoint | Tile::Ground)),
+                        texture_index: TileTextureIndex(texture_index),
                         ..Default::default()
                     })
                     .id();
@@ -109,24 +115,32 @@ pub fn spawn_level(world: &mut World) {
 #[derive(Resource, Reflect, Debug)]
 #[reflect(Resource)]
 pub struct Level {
-    terrain: Vec<bool>,
+    terrain: Vec<Tile>,
     row_size: usize,
     spawn: (usize, usize),
     unlocks: [(usize, usize); 3],
 }
 
+#[derive(Reflect, Debug, Clone, Copy)]
+enum Tile {
+    Air,
+    Ground,
+    CheckPoint,
+}
+
 /// Temporary hardcoded level for testing.
 impl Default for Level {
     fn default() -> Self {
-        let o = false;
-        let x = true;
+        let o = Tile::Air;
+        let x = Tile::Ground;
+        let i = Tile::CheckPoint;
         #[rustfmt::skip]
         let terrain = vec![
-            x, o, o, o, o, o, o, o, o, o, o, o, o, o, o, x,
+            x, o, o, o, o, o, o, o, o, i, o, o, o, o, o, x,
             x, o, o, o, o, o, o, o, x, x, x, o, o, o, o, x,
-            x, o, o, o, x, x, x, o, o, o, o, o, o, o, o, x,
+            x, i, o, o, x, x, x, o, o, o, o, o, o, o, o, x,
             x, x, x, o, o, o, o, o, o, o, o, o, o, o, o, x,
-            o, o, x, x, o, o, o, o, o, o, o, o, o, o, o, x,
+            o, o, x, x, o, o, o, o, o, o, o, o, o, i, o, x,
             o, o, o, x, x, o, o, o, o, o, o, x, x, x, x, x,
             o, o, o, o, x, x, x, x, x, x, x, x, o, o, o, o,
         ];
@@ -157,7 +171,7 @@ impl Level {
         let y = self.height() - 1 - usize::try_from(pos.y).ok()?;
         self.terrain
             .get(self.row_size * y + usize::try_from(pos.x).ok()?)
-            .copied()
+            .map(|x| matches!(x, Tile::Ground))
     }
 
     pub fn get_spawn(&self) -> IVec2 {
