@@ -253,6 +253,8 @@ fn update_animation(
         return;
     }
 
+    state.animation = None;
+
     // check if we have manual controls to execute
     if cfg!(feature = "dev") {
         state.animation = debug_actions(&input, &mut state).and_then(|action| {
