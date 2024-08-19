@@ -196,7 +196,7 @@ fn show_script(
     };
 
     // TODO: Actually use this to fix the sequence (visually).
-    let _bracket_balance = calculate_bracket_balance(&editor_state.entered);
+    let bracket_balance = calculate_bracket_balance(&editor_state.entered);
 
     // Despawn all current editor item entities.
     for entity in &editor_items_query {
@@ -208,27 +208,54 @@ fn show_script(
     // Spawn new editor items.
     let editor_ui = editor_ui_query.single();
     commands.entity(editor_ui).with_children(|children| {
+        for _ in bracket_balance..0 {
+            spawn_editor_item(
+                &editor_assets,
+                children,
+                &ScriptCommand::OpenBracket,
+                Color::linear_rgba(0.0, 0.0, 0.0, 0.5),
+            );
+        }
         for command in &editor_state.entered {
-            // TODO: Replace with correct image, loaded from Assets (preloading like for
-            // animations)
-            children.spawn((
-                ImageBundle {
-                    style: Style {
-                        // margin: UiRect::all(Val::Auto),
-                        height: Val::Percent(100.0),
-                        ..default()
-                    },
-                    image: UiImage::new(editor_assets.icons.clone()),
-                    ..default()
-                },
-                TextureAtlas {
-                    layout: editor_assets.atlas.clone(),
-                    index: EditorAssets::get_atlas_index(command),
-                },
-                EditorItem,
-            ));
+            spawn_editor_item(
+                &editor_assets,
+                children,
+                command,
+                Color::linear_rgba(0.0, 0.0, 0.0, 1.0),
+            );
+        }
+        for _ in 0..bracket_balance {
+            spawn_editor_item(
+                &editor_assets,
+                children,
+                &ScriptCommand::CloseBracket,
+                Color::linear_rgba(0.0, 0.0, 0.0, 0.5),
+            );
         }
     });
+}
+
+fn spawn_editor_item(
+    editor_assets: &EditorAssets,
+    children: &mut ChildBuilder,
+    command: &ScriptCommand,
+    color: Color,
+) {
+    children.spawn((
+        ImageBundle {
+            style: Style {
+                height: Val::Percent(100.0),
+                ..default()
+            },
+            image: UiImage::new(editor_assets.icons.clone()).with_color(color),
+            ..default()
+        },
+        TextureAtlas {
+            layout: editor_assets.atlas.clone(),
+            index: EditorAssets::get_atlas_index(command),
+        },
+        EditorItem,
+    ));
 }
 
 fn calculate_bracket_balance(script: &[ScriptCommand]) -> i32 {
