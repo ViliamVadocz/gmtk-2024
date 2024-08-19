@@ -7,7 +7,7 @@ use crate::{
     audio::Music,
     demo::{editor::EditorUI, level::spawn_level as spawn_level_command},
     screens::Screen,
-    theme::palette::LABEL_TEXT,
+    theme::palette::{BUTTON_HOVERED_BACKGROUND, LABEL_TEXT},
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -45,13 +45,14 @@ fn spawn_level(mut commands: Commands) {
         .with_children(|children| {
             children.spawn((Name::new("Editor UI"), EditorUI, NodeBundle {
                 style: Style {
-                    width: Percent(70.0),
+                    width: Auto,
                     height: Percent(10.0),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
                     flex_direction: FlexDirection::Row,
                     ..default()
                 },
+                background_color: BackgroundColor(Color::WHITE),
                 ..default()
             }));
             children
