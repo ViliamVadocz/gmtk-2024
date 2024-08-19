@@ -104,11 +104,16 @@ pub struct PlayerAssets {
     #[dependency]
     pub texture: Handle<Image>,
     pub layout: Handle<TextureAtlasLayout>,
+
+    #[dependency]
+    pub hazard_texture: Handle<Image>,
+    pub hazard_layout: Handle<TextureAtlasLayout>,
 }
 
 impl PlayerAssets {
     pub const ANIM_COLUMNS: u32 = 16;
     pub const ANIM_ROWS: u32 = 8;
+    pub const HAZARD_PATH: &'static str = "images/hazard.png";
     pub const PATH: &'static str = "images/robot.png";
 }
 
@@ -122,6 +127,7 @@ impl FromWorld for PlayerAssets {
         };
 
         let texture = assets.load_with_settings(PlayerAssets::PATH, settings);
+        let hazard_texture = assets.load_with_settings(PlayerAssets::HAZARD_PATH, settings);
 
         // A texture atlas is a way to split one image with a grid into multiple
         // sprites. By attaching it to a [`SpriteBundle`] and providing an index, we
@@ -134,6 +140,13 @@ impl FromWorld for PlayerAssets {
             UVec2::splat(48),
             PlayerAssets::ANIM_COLUMNS,
             PlayerAssets::ANIM_ROWS,
+            None,
+            None,
+        ));
+        let hazard_layout = texture_atlas_layouts.add(TextureAtlasLayout::from_grid(
+            UVec2::splat(16),
+            4,
+            1,
             None,
             None,
         ));
@@ -190,6 +203,8 @@ impl FromWorld for PlayerAssets {
             },
             texture,
             layout,
+            hazard_layout,
+            hazard_texture,
         }
     }
 }

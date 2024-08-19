@@ -49,7 +49,7 @@ fn spawn_obstacle(
             spawn: config.clone(),
         },
         SpriteBundle {
-            texture: player_assets.texture.clone(),
+            texture: player_assets.hazard_texture.clone(),
             transform: Transform::from_scale(Vec2::splat(4.0).extend(1.0)),
             sprite: Sprite::default(),
             ..Default::default()
@@ -57,7 +57,7 @@ fn spawn_obstacle(
         GridTransform(config.pos),
         NextGridTransform(config.pos),
         TextureAtlas {
-            layout: player_assets.layout.clone(),
+            layout: player_assets.hazard_layout.clone(),
             index: 0,
         },
         StateScoped(Screen::Gameplay),
@@ -70,6 +70,7 @@ fn movement(
         &mut NextGridTransform,
         &mut Transform,
         &mut Obstacle,
+        &mut TextureAtlas,
     )>,
     tick: Res<AnimationTick>,
     proj: Res<WorldGrid>,
@@ -78,7 +79,7 @@ fn movement(
 ) {
     let reset = reset.read().count() != 0;
     let ticks = tick_start.read().count();
-    for (mut grid, mut next_grid, mut world, mut obstacle) in &mut o {
+    for (mut grid, mut next_grid, mut world, mut obstacle, mut atlas) in &mut o {
         if ticks % 2 == 1 {
             next_grid.0 = grid.0 + obstacle.dir;
             obstacle.dir = -obstacle.dir;
@@ -93,5 +94,7 @@ fn movement(
         let new = next_grid.0.as_vec2();
         let pos = old.lerp(new, tick.0.fraction());
         world.translation = proj.project_to_world(pos).extend(world.translation.z);
+
+        atlas.index = (tick.0.fraction() * 4.) as usize;
     }
 }
