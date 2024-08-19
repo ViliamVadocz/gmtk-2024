@@ -10,7 +10,11 @@ use bevy_ecs_tilemap::prelude::*;
 
 use crate::{
     asset_tracking::LoadResource,
-    demo::{action::{ScriptCommand, DOWN, UP}, obstacle::SpawnObstacle, player::SpawnPlayer},
+    demo::{
+        action::{ScriptCommand, DOWN, UP},
+        obstacle::SpawnObstacle,
+        player::SpawnPlayer,
+    },
     AppSet,
 };
 
@@ -85,7 +89,7 @@ pub fn spawn_level(world: &mut World) {
                     Tile::Down => Some(DOWN),
                     Tile::Up => Some(UP),
                     Tile::Static => Some(IVec2::ZERO),
-                    _ => None
+                    _ => None,
                 };
                 if let Some(dir) = obstacle {
                     commands.add(SpawnObstacle {
@@ -175,7 +179,6 @@ impl Default for Level {
             x,x,x,x,x,x,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
         ];
 
-
         Self {
             terrain,
             row_size: 48,
@@ -190,9 +193,11 @@ impl Default for Level {
                 (IVec2::new(47, 6), (ScriptCommand::Turn, 7)),
                 (IVec2::new(41, 5), (ScriptCommand::Turn, 8)),
                 (IVec2::new(32, 1), (ScriptCommand::Turn, 9)),
-            ].into_iter().collect(),
+            ]
+            .into_iter()
+            .collect(),
             command_count: 1,
-            unlocked: vec![ScriptCommand::Walk]
+            unlocked: vec![ScriptCommand::Walk],
         }
     }
 }
