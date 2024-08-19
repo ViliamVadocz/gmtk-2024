@@ -17,11 +17,21 @@ pub(super) fn plugin(app: &mut App) {
     );
 }
 
-#[derive(Resource, Debug, Default)]
+#[derive(Resource, Debug)]
 pub struct EditorState {
     pub enabled: bool,
     entered: Vec<ScriptCommand>,
     cursor: usize,
+}
+
+impl Default for EditorState {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            entered: Default::default(),
+            cursor: Default::default(),
+        }
+    }
 }
 
 #[derive(Event, Debug, Default)]

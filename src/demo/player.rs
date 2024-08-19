@@ -41,7 +41,7 @@ pub(super) fn plugin(app: &mut App) {
     app.insert_resource(PlayerState {
         x_dir: 1,
         animation: None,
-        sequence: vec![ScriptCommand::Walk, ScriptCommand::Climb],
+        sequence: vec![],
         cursor: 0,
         autoplay: true,
     });
