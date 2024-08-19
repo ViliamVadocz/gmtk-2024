@@ -7,7 +7,7 @@ use crate::{
     audio::Music,
     demo::{editor::EditorUI, level::spawn_level as spawn_level_command},
     screens::Screen,
-    theme::palette::{BUTTON_HOVERED_BACKGROUND, LABEL_TEXT},
+    theme::palette::LABEL_TEXT,
 };
 
 pub(super) fn plugin(app: &mut App) {

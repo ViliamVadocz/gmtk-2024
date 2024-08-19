@@ -194,7 +194,6 @@ fn show_script(
         return;
     };
 
-    // TODO: Actually use this to fix the sequence (visually).
     let bracket_balance = calculate_bracket_balance(&editor_state.entered);
 
     // Despawn all current editor item entities.
@@ -215,13 +214,19 @@ fn show_script(
                 Color::linear_rgba(0.0, 0.0, 0.0, 0.5),
             );
         }
-        for command in &editor_state.entered {
+        for (i, command) in editor_state.entered.iter().enumerate() {
+            if i == editor_state.cursor {
+                add_cursor(children, &editor_assets);
+            }
             spawn_editor_item(
                 &editor_assets,
                 children,
                 command,
                 Color::linear_rgba(0.0, 0.0, 0.0, 1.0),
             );
+        }
+        if editor_state.cursor == editor_state.entered.len() {
+            add_cursor(children, &editor_assets);
         }
         for _ in 0..bracket_balance {
             spawn_editor_item(
@@ -232,6 +237,20 @@ fn show_script(
             );
         }
     });
+}
+
+fn add_cursor(children: &mut ChildBuilder, editor_assets: &Res<EditorAssets>) {
+    children.spawn((
+        ImageBundle {
+            style: Style {
+                height: Val::Percent(100.0),
+                ..default()
+            },
+            image: UiImage::new(editor_assets.cursor.clone()),
+            ..default()
+        },
+        EditorItem,
+    ));
 }
 
 fn spawn_editor_item(
