@@ -58,7 +58,8 @@ fn apply_animation(
     let new = grid.project_to_world(pos.0.as_vec2());
     transform.translation = new.extend(transform.translation.z);
 
-    atlas.index = anim.row_number * 16 + (tick.0.fraction() * anim.frame_count as f32) as usize;
+    atlas.index = anim.row_number * (PlayerAssets::ANIM_COLUMNS as usize)
+        + (tick.0.fraction() * anim.frame_count as f32) as usize;
     if state.animation.is_none() {
         atlas.index = 0;
     }
@@ -106,6 +107,8 @@ pub struct PlayerAssets {
 }
 
 impl PlayerAssets {
+    pub const ANIM_COLUMNS: u32 = 16;
+    pub const ANIM_ROWS: u32 = 8;
     pub const PATH: &'static str = "images/robot.png";
 }
 
@@ -129,8 +132,8 @@ impl FromWorld for PlayerAssets {
 
         let layout = texture_atlas_layouts.add(TextureAtlasLayout::from_grid(
             UVec2::splat(48),
-            12,
-            7,
+            PlayerAssets::ANIM_COLUMNS,
+            PlayerAssets::ANIM_ROWS,
             None,
             None,
         ));
@@ -175,14 +178,14 @@ impl FromWorld for PlayerAssets {
                 squares: vec![RIGHT, DOWN + RIGHT, DOWN + DOWN + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 12,
-                anchor: Anchor::Custom(Vec2::new(0.0, 0.25)),
+                anchor: Anchor::Custom(Vec2::new(0.0, 1.0 / 3.0)),
                 row_number: 5,
             },
             jump: AnimationResource {
                 squares: vec![RIGHT, UP, RIGHT + UP, RIGHT + UP + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 13,
-                anchor: Anchor::Custom(Vec2::new(-0.25, 0.0)),
+                anchor: Anchor::Custom(Vec2::new(-1.0 / 3.0, 0.0)),
                 row_number: 6,
             },
             texture,
