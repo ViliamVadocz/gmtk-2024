@@ -41,7 +41,9 @@ impl Default for EditorState {
 }
 
 #[derive(Event, Debug, Default)]
-struct EditorChanged;
+pub struct EditorChanged {
+    pub active: Option<usize>,
+}
 
 #[derive(Component, Reflect, Debug)]
 #[reflect(Component)]
@@ -197,7 +199,7 @@ fn show_script(
     editor_items_query: Query<Entity, (With<EditorItem>, Without<EditorUI>)>,
     editor_assets: Res<EditorAssets>,
 ) {
-    let Some(EditorChanged) = editor_changed.read().next() else {
+    let Some(event) = editor_changed.read().next() else {
         return;
     };
 
@@ -207,8 +209,6 @@ fn show_script(
     for entity in &editor_items_query {
         commands.entity(entity).despawn_recursive();
     }
-
-    log::info!("{editor_state:?}");
 
     // Spawn new editor items.
     let editor_ui = editor_ui_query.single();
@@ -222,17 +222,18 @@ fn show_script(
             );
         }
         for (i, command) in editor_state.entered.iter().enumerate() {
-            if i == editor_state.cursor {
+            if i == editor_state.cursor && event.active.is_none() {
                 add_cursor(children, &editor_assets);
             }
-            spawn_editor_item(
-                &editor_assets,
-                children,
-                command,
-                Color::linear_rgba(0.0, 0.0, 0.0, 1.0),
-            );
+
+            let mut color = Color::linear_rgba(0.0, 0.0, 0.0, 1.0);
+            // when executing, gray out all non active commands
+            if event.active.is_some() && event.active != Some(i) {
+                color = Color::linear_rgba(0.0, 0.0, 0.0, 0.5);
+            }
+            spawn_editor_item(&editor_assets, children, command, color);
         }
-        if editor_state.cursor == editor_state.entered.len() {
+        if editor_state.cursor == editor_state.entered.len() && event.active.is_none() {
             add_cursor(children, &editor_assets);
         }
         for _ in 0..bracket_balance {
@@ -316,7 +317,7 @@ fn submit_script(
         .chain(editor_state.entered.drain(..))
         .chain((0..bracket_balance).map(|_| ScriptCommand::CloseBracket))
         .collect();
-    editor_state.entered = new_sequence.clone();
+    editor_state.entered.clone_from(&new_sequence);
     editor_state.cursor = new_sequence.len();
     // Send event to update the editor view.
     editor_changed.send_default();

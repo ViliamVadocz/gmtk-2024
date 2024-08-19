@@ -18,6 +18,7 @@ use super::{
 use crate::{
     asset_tracking::LoadResource,
     demo::{
+        editor::EditorChanged,
         level::{NextGridTransform, Reset, TickStart},
         obstacle::Obstacle,
     },
@@ -136,6 +137,7 @@ fn respawn(
     mut level: ResMut<Level>,
     mut reset: EventWriter<Reset>,
     mut editor_state: ResMut<EditorState>,
+    mut update_editor: EventWriter<EditorChanged>,
 ) {
     let Ok((mut pos, mut new_pos)) = player.get_single_mut() else {
         return;
@@ -168,6 +170,7 @@ fn respawn(
         // allow editing again
         editor_state.enabled = true;
         reset.send(Reset);
+        update_editor.send_default();
     }
 }
 
@@ -181,6 +184,7 @@ fn update_animation(
     editor_state: Res<EditorState>,
     mut tick_start: EventWriter<TickStart>,
     mut autoplay_label: Query<&mut Text, With<AutoplayLabel>>,
+    mut update_editor: EventWriter<EditorChanged>,
 ) {
     let Ok((pos, mut next_pos)) = player.get_single_mut() else {
         return;
@@ -220,6 +224,9 @@ fn update_animation(
 
     // check if we have script to execute
     if input.pressed(KeyCode::KeyF) || state.autoplay {
+        update_editor.send(EditorChanged {
+            active: Some(state.cursor),
+        });
         state.animation = action_interpreter(&mut state, pos, &level, assets.unwrap());
     }
 
