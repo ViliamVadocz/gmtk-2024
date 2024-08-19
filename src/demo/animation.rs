@@ -20,10 +20,7 @@ use super::{
 use crate::{demo::player::Player, AppSet};
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_systems(
-        Update,
-        update_animation.in_set(AppSet::PropagateGridTransform),
-    );
+    app.add_systems(Update, apply_animation.in_set(AppSet::ApplyAnimation));
 }
 
 #[derive(Reflect, PartialEq, Clone, Copy)]
@@ -34,7 +31,7 @@ pub enum PlayerAnimationState {
     Idle(usize),
 }
 
-fn update_animation(
+fn apply_animation(
     state: Res<PlayerState>,
     mut q: Query<
         (

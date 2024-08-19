@@ -7,7 +7,11 @@ use bevy::{
 };
 use bevy_ecs_tilemap::prelude::*;
 
-use crate::{asset_tracking::LoadResource, demo::player::SpawnPlayer, AppSet};
+use crate::{
+    asset_tracking::LoadResource,
+    demo::{obstacle::SpawnObstacle, player::SpawnPlayer},
+    AppSet,
+};
 
 pub(super) fn plugin(app: &mut App) {
     // No setup required for this plugin.
@@ -110,6 +114,11 @@ pub fn spawn_level(world: &mut World) {
     );
 
     SpawnPlayer.apply(world);
+    SpawnObstacle {
+        pos: IVec2::new(8, 1),
+        going_up: true,
+    }
+    .apply(world)
 }
 
 #[derive(Resource, Reflect, Debug)]

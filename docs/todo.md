@@ -34,6 +34,7 @@
     - action selection
     - show action cursor during play
     - textbox for "invalid input" (mismatched brackets, unknown letters)
+    - show if autoplay is enabled
     - main menu pretty
     - logo / icon (splash)
     - credits

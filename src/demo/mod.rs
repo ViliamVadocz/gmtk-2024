@@ -8,8 +8,14 @@ use bevy::prelude::*;
 pub mod action;
 pub mod animation;
 pub mod level;
+mod obstacle;
 pub mod player;
 
 pub(super) fn plugin(app: &mut App) {
-    app.add_plugins((animation::plugin, player::plugin, level::plugin));
+    app.add_plugins((
+        animation::plugin,
+        player::plugin,
+        level::plugin,
+        obstacle::plugin,
+    ));
 }

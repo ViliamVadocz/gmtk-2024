@@ -7,7 +7,6 @@ use std::time::Duration;
 use bevy::{
     ecs::{system::RunSystemOnce as _, world::Command},
     prelude::*,
-    sprite::Anchor,
 };
 use bevy_simple_text_input::TextInputInactive;
 
@@ -18,6 +17,7 @@ use super::{
 };
 use crate::{
     asset_tracking::LoadResource,
+    demo::level::NextTick,
     screens::{gameplay::Editor, Screen},
     AppSet,
 };
@@ -31,7 +31,7 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         (
             respawn,
-            action_interpreter.in_set(AppSet::RecordInput),
+            update_animation.in_set(AppSet::RecordInput),
             camera_follow_player.in_set(AppSet::UpdateCamera),
         ),
     );
@@ -81,10 +81,7 @@ fn spawn_player(
         SpriteBundle {
             texture: player_assets.idle.texture.clone(),
             transform: Transform::from_scale(Vec2::splat(4.0).extend(1.0)),
-            sprite: Sprite {
-                anchor: Anchor::BottomLeft,
-                ..Default::default()
-            },
+            sprite: Sprite::default(),
             ..Default::default()
         },
         GridTransform(level.get_spawn()),
@@ -149,7 +146,7 @@ fn respawn(
     }
 }
 
-fn action_interpreter(
+fn update_animation(
     input: Res<ButtonInput<KeyCode>>,
     mut tick: ResMut<AnimationTick>,
     mut state: ResMut<PlayerState>,
@@ -157,6 +154,7 @@ fn action_interpreter(
     assets: Option<Res<PlayerAssets>>,
     mut level: ResMut<Level>,
     editor_inactive: Query<&TextInputInactive, With<Editor>>,
+    mut next_tick: EventWriter<NextTick>,
 ) {
     let Ok(mut pos) = player.get_single_mut() else {
         return;
@@ -183,34 +181,31 @@ fn action_interpreter(
     }
 
     // check if we have manual controls to execute
-    let mut animation = if cfg!(feature = "dev") {
-        debug_actions(&input, &mut state).and_then(|action| {
+    if cfg!(feature = "dev") {
+        state.animation = debug_actions(&input, &mut state).and_then(|action| {
             if let ScriptCommand::Turn = action {
                 state.x_dir *= -1;
             };
             let assets = assets.as_ref().unwrap();
             level.check_valid(pos.0, action, state.x_dir, assets)
         })
-    } else {
-        None
     };
 
     // check if we have script to execute
     if input.pressed(KeyCode::KeyF) || state.autoplay {
-        animation = action_interpreter_new(&mut state, &pos, &level, assets.unwrap());
+        state.animation = action_interpreter(&mut state, &pos, &level, assets.unwrap());
     }
 
-    // apply the animation and configure the timer
-    if let Some(animation) = animation {
+    if let Some(animation) = &state.animation {
         tick.0.set_duration(animation.duration);
-        state.animation = Some(animation);
+        next_tick.send(NextTick);
     } else {
         tick.0.set_duration(Duration::from_secs_f32(0.1));
     }
     tick.0.reset();
 }
 
-fn action_interpreter_new(
+fn action_interpreter(
     state: &mut PlayerState,
     pos: &GridTransform,
     level: &Level,
@@ -221,12 +216,9 @@ fn action_interpreter_new(
     }
 
     // Rename for convenience.
-    let PlayerState {
-        ref sequence,
-        cursor,
-        ref x_dir,
-        ..
-    } = &mut *state;
+    let state = &mut *state;
+    let cursor = &mut state.cursor;
+    let sequence = &state.sequence;
 
     // Helper functions to clean up the interpreter code below.
     let find_matching_open_bracket = |cursor| {
@@ -267,7 +259,7 @@ fn action_interpreter_new(
                 *cursor = find_matching_open_bracket(*cursor);
             }
             command => {
-                match level.check_valid(pos.0, command, *x_dir, &assets) {
+                match level.check_valid(pos.0, command, state.x_dir, &assets) {
                     Some(anim) => {
                         // Update the cursor.
                         *cursor = (*cursor + 1) % sequence.len();

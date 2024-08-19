@@ -24,7 +24,7 @@ impl Plugin for AppPlugin {
                 AppSet::TickTimers,
                 AppSet::RecordInput,
                 AppSet::Update,
-                AppSet::PropagateGridTransform,
+                AppSet::ApplyAnimation,
                 AppSet::UpdateCamera,
             )
                 .chain(),
@@ -90,7 +90,7 @@ enum AppSet {
     RecordInput,
     /// Do everything else (consider splitting this into further variants).
     Update,
-    PropagateGridTransform,
+    ApplyAnimation,
     UpdateCamera,
 }
 
