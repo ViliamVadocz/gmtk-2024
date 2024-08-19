@@ -116,6 +116,7 @@ fn edit_script(
     input: Res<ButtonInput<KeyCode>>,
     mut editor_state: ResMut<EditorState>,
     mut commands: Commands,
+    level: Res<Level>,
 ) {
     if !editor_state.enabled {
         return;
@@ -135,7 +136,11 @@ fn edit_script(
         (KeyCode::BracketRight, ScriptCommand::CloseBracket),
     ];
     for (key, command) in key_command_map {
-        if input.just_pressed(key) {
+        let check = match command {
+            ScriptCommand::CloseBracket => ScriptCommand::OpenBracket,
+            rest => rest,
+        };
+        if input.just_pressed(key) && level.unlocked.contains(&check) {
             changed = true;
             let index = editor_state.cursor;
             editor_state.entered.insert(index, command);
