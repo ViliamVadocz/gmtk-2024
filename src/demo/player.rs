@@ -224,10 +224,11 @@ fn update_animation(
 
     // check if we have script to execute
     if input.pressed(KeyCode::KeyF) || state.autoplay {
-        let current = state.cursor;
-        state.animation = action_interpreter(&mut state, pos, &level, assets.unwrap());
+        let (script_index, animation) =
+            action_interpreter(&mut state, pos, &level, assets.unwrap());
+        state.animation = animation;
         commands.add(ShowEditor {
-            active: Some((current, state.animation.is_some())),
+            active: Some((script_index, state.animation.is_some())),
         });
     }
 
@@ -236,18 +237,22 @@ fn update_animation(
         tick.0.set_duration(animation.duration);
         next_pos.0 = pos.0 + animation.final_offset(state.x_dir)
     } else {
-        tick.0.set_duration(Duration::from_secs_f32(0.5));
+        tick.0.reset();
+        tick.0.set_duration(Duration::from_secs_f32(0.25));
     }
 }
 
+/// Returns the index of the script item that should be highlighted and maybe
+/// the animation that should be played.
 fn action_interpreter(
     state: &mut PlayerState,
     pos: &GridTransform,
     level: &Level,
     assets: Res<PlayerAssets>,
-) -> Option<AnimationResource> {
+) -> (usize, Option<AnimationResource>) {
     if state.sequence.is_empty() {
-        return None;
+        log::error!("The sequence should never be empty!");
+        return (0, None);
     }
 
     // Rename for convenience.
@@ -287,6 +292,7 @@ fn action_interpreter(
 
     // Prevent infinite loops by limiting the number of iterations.
     for _ in 0..sequence.len() {
+        let item_index = *cursor;
         match sequence[*cursor] {
             ScriptCommand::OpenBracket => {}
             ScriptCommand::CloseBracket => {
@@ -303,12 +309,12 @@ fn action_interpreter(
                             state.x_dir *= -1
                         };
 
-                        return Some(anim.clone());
+                        return (item_index, Some(anim.clone()));
                     }
                     None => {
                         // Skip to the end of scope.
                         *cursor = find_matching_close_bracket(*cursor);
-                        return None;
+                        return (item_index, None);
                     }
                 }
             }
@@ -319,7 +325,7 @@ fn action_interpreter(
     }
 
     // No action from the script was possible.
-    None
+    (*cursor, None)
 }
 
 fn camera_follow_player(
