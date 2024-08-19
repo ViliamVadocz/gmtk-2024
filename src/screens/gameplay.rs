@@ -50,7 +50,6 @@ fn spawn_level(mut commands: Commands) {
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
                     flex_direction: FlexDirection::Row,
-                    position_type: PositionType::Absolute,
                     ..default()
                 },
                 ..default()
@@ -63,7 +62,6 @@ fn spawn_level(mut commands: Commands) {
                         justify_content: JustifyContent::End,
                         align_items: AlignItems::Start,
                         flex_direction: FlexDirection::Column,
-                        row_gap: Px(10.0),
                         ..default()
                     },
                     ..default()

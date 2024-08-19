@@ -214,8 +214,8 @@ fn show_script(
             children.spawn((
                 ImageBundle {
                     style: Style {
-                        margin: UiRect::all(Val::Auto),
-                        width: Val::Percent(70.0),
+                        // margin: UiRect::all(Val::Auto),
+                        height: Val::Percent(100.0),
                         ..default()
                     },
                     image: UiImage::new(editor_assets.icons.clone()),
