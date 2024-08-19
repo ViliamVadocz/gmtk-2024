@@ -49,7 +49,7 @@ fn spawn_obstacle(
             spawn: config.clone(),
         },
         SpriteBundle {
-            texture: player_assets.idle.texture.clone(),
+            texture: player_assets.texture.clone(),
             transform: Transform::from_scale(Vec2::splat(4.0).extend(1.0)),
             sprite: Sprite::default(),
             ..Default::default()
@@ -57,7 +57,7 @@ fn spawn_obstacle(
         GridTransform(config.pos),
         NextGridTransform(config.pos),
         TextureAtlas {
-            layout: player_assets.idle.atlas.clone(),
+            layout: player_assets.layout.clone(),
             index: 0,
         },
         StateScoped(Screen::Gameplay),

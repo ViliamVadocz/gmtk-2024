@@ -39,7 +39,6 @@ fn apply_animation(
             &GridTransform,
             &mut TextureAtlas,
             &mut Sprite,
-            &mut Handle<Image>,
         ),
         With<Player>,
     >,
@@ -47,7 +46,7 @@ fn apply_animation(
     tick: Res<AnimationTick>,
     player_assets: Option<Res<PlayerAssets>>,
 ) {
-    let Ok((mut transform, pos, mut atlas, mut sprite, mut texture)) = q.get_single_mut() else {
+    let Ok((mut transform, pos, mut atlas, mut sprite)) = q.get_single_mut() else {
         return;
     };
 
@@ -59,27 +58,22 @@ fn apply_animation(
     let new = grid.project_to_world(pos.0.as_vec2());
     transform.translation = new.extend(transform.translation.z);
 
-    atlas.layout = anim.atlas.clone();
-    atlas.index = (tick.0.fraction() * anim.frame_count as f32) as usize;
+    atlas.index = anim.row_number * 12 + (tick.0.fraction() * anim.frame_count as f32) as usize;
     if state.animation.is_none() {
         atlas.index = 0;
     }
-
-    *texture = anim.texture.clone();
 
     sprite.flip_x = state.x_dir == -1;
     sprite.anchor = Anchor::Custom(anim.anchor.as_vec() * Vec2::new(state.x_dir as f32, 1.));
 }
 
-#[derive(Asset, Reflect, Clone)]
+#[derive(Clone, Reflect)]
 pub struct AnimationResource {
-    #[dependency]
-    pub texture: Handle<Image>,
-    pub atlas: Handle<TextureAtlasLayout>,
     pub squares: Vec<IVec2>,
     pub duration: Duration,
     frame_count: usize,
     anchor: Anchor,
+    row_number: usize,
 }
 
 impl AnimationResource {
@@ -92,35 +86,27 @@ impl AnimationResource {
 pub struct PlayerAssets {
     // This #[dependency] attribute marks the field as a dependency of the Asset.
     // This means that it will not finish loading until the labeled asset is also loaded.
-    #[dependency]
     pub idle: AnimationResource,
 
-    #[dependency]
     pub walk: AnimationResource,
 
-    #[dependency]
     pub climb: AnimationResource,
 
-    #[dependency]
     pub drop: AnimationResource,
 
-    #[dependency]
     pub drop2: AnimationResource,
 
-    #[dependency]
     pub jump: AnimationResource,
 
-    #[dependency]
     pub turn: AnimationResource,
+
+    #[dependency]
+    pub texture: Handle<Image>,
+    pub layout: Handle<TextureAtlasLayout>,
 }
 
 impl PlayerAssets {
-    pub const PATH_CLIMB: &'static str = "images/climb.png";
-    pub const PATH_DROP: &'static str = "images/drop.png";
-    pub const PATH_DROP2: &'static str = "images/drop2.png";
-    pub const PATH_IDLE: &'static str = "images/idle.png";
-    pub const PATH_TURN: &'static str = "images/turn.png";
-    pub const PATH_WALK: &'static str = "images/walk.png";
+    pub const PATH: &'static str = "images/robot.png";
 }
 
 impl FromWorld for PlayerAssets {
@@ -132,12 +118,7 @@ impl FromWorld for PlayerAssets {
             settings.sampler = ImageSampler::nearest();
         };
 
-        let idle_texture = assets.load_with_settings(PlayerAssets::PATH_IDLE, settings);
-        let walk_texture = assets.load_with_settings(PlayerAssets::PATH_WALK, settings);
-        let climb_texture = assets.load_with_settings(PlayerAssets::PATH_CLIMB, settings);
-        let drop_texture = assets.load_with_settings(PlayerAssets::PATH_DROP, settings);
-        let drop2_texture = assets.load_with_settings(PlayerAssets::PATH_DROP2, settings);
-        let turn_texture = assets.load_with_settings(PlayerAssets::PATH_TURN, settings);
+        let texture = assets.load_with_settings(PlayerAssets::PATH, settings);
 
         // A texture atlas is a way to split one image with a grid into multiple
         // sprites. By attaching it to a [`SpriteBundle`] and providing an index, we
@@ -146,77 +127,66 @@ impl FromWorld for PlayerAssets {
         // this example: https://github.com/bevyengine/bevy/blob/latest/examples/2d/texture_atlas.rs
         let mut texture_atlas_layouts = world.resource_mut::<Assets<TextureAtlasLayout>>();
 
-        let mut layout =
-            |tile_size: UVec2, columns: u32, rows: u32| -> Handle<TextureAtlasLayout> {
-                texture_atlas_layouts.add(TextureAtlasLayout::from_grid(
-                    tile_size, columns, rows, None, None,
-                ))
-            };
-
-        let idle_atlas = layout(UVec2::splat(16), 2, 2);
-        let walk_atlas = layout(UVec2::new(32, 16), 4, 3);
-        let climb_atlas = layout(UVec2::splat(32), 4, 3);
-        let drop_atlas = layout(UVec2::splat(32), 4, 3);
-        let drop2_atlas = layout(UVec2::new(32, 48), 4, 3);
-        let turn_atlas = layout(UVec2::splat(16), 7, 1);
+        let layout = texture_atlas_layouts.add(TextureAtlasLayout::from_grid(
+            UVec2::splat(48),
+            12,
+            7,
+            None,
+            None,
+        ));
 
         Self {
             idle: AnimationResource {
-                texture: idle_texture,
-                atlas: idle_atlas,
                 squares: vec![],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 4,
                 anchor: Anchor::Center,
+                row_number: 0,
             },
             walk: AnimationResource {
-                texture: walk_texture,
-                atlas: walk_atlas,
                 squares: vec![RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 12,
                 anchor: Anchor::Custom(Vec2::new(-0.25, 0.)),
+                row_number: 0,
             },
             climb: AnimationResource {
-                texture: climb_texture.clone(),
-                atlas: climb_atlas.clone(),
                 squares: vec![UP, UP + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 11,
                 anchor: Anchor::Custom(Vec2::new(-0.25, -0.25)),
+                row_number: 0,
             },
             drop: AnimationResource {
-                texture: drop_texture.clone(),
-                atlas: drop_atlas.clone(),
                 squares: vec![RIGHT, DOWN + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 12,
                 anchor: Anchor::Custom(Vec2::new(-0.25, 0.25)),
+                row_number: 0,
             },
             drop2: AnimationResource {
-                texture: drop2_texture,
-                atlas: drop2_atlas,
                 squares: vec![RIGHT, DOWN + RIGHT, DOWN + DOWN + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 12,
-                anchor: Anchor::Custom(Vec2::new(-0.25, 1.0 / 3.0)),
+                anchor: Anchor::Custom(Vec2::new(-0.25, 0.25)),
+                row_number: 0,
             },
             jump: AnimationResource {
-                texture: climb_texture,
-                atlas: climb_atlas,
                 squares: vec![RIGHT, UP, RIGHT + UP, RIGHT + UP + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 11,
                 anchor: Anchor::Custom(Vec2::new(-0.25, -0.25)),
+                row_number: 0,
             },
             turn: AnimationResource {
-                texture: turn_texture,
-                atlas: turn_atlas,
                 squares: vec![],
                 duration: Duration::from_secs_f32(0.4),
                 frame_count: 7,
                 anchor: Anchor::Center,
+                row_number: 0,
             },
+            texture,
+            layout,
         }
     }
 }

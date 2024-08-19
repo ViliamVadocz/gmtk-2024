@@ -83,7 +83,7 @@ fn spawn_player(
         Name::new("Player"),
         Player,
         SpriteBundle {
-            texture: player_assets.idle.texture.clone(),
+            texture: player_assets.texture.clone(),
             transform: Transform::from_scale(Vec2::splat(4.0).extend(1.0)),
             sprite: Sprite::default(),
             ..Default::default()
@@ -91,7 +91,7 @@ fn spawn_player(
         GridTransform(level.get_spawn()),
         NextGridTransform(level.get_spawn()),
         TextureAtlas {
-            layout: player_assets.idle.atlas.clone(),
+            layout: player_assets.layout.clone(),
             index: 0,
         },
         StateScoped(Screen::Gameplay),
