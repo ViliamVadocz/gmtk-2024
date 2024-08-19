@@ -58,7 +58,7 @@ fn apply_animation(
     let new = grid.project_to_world(pos.0.as_vec2());
     transform.translation = new.extend(transform.translation.z);
 
-    atlas.index = anim.row_number * 12 + (tick.0.fraction() * anim.frame_count as f32) as usize;
+    atlas.index = anim.row_number * 16 + (tick.0.fraction() * anim.frame_count as f32) as usize;
     if state.animation.is_none() {
         atlas.index = 0;
     }
@@ -147,43 +147,43 @@ impl FromWorld for PlayerAssets {
                 squares: vec![RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 12,
-                anchor: Anchor::Custom(Vec2::new(-0.25, 0.)),
-                row_number: 0,
+                anchor: Anchor::Center,
+                row_number: 1,
             },
             climb: AnimationResource {
                 squares: vec![UP, UP + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
-                frame_count: 11,
-                anchor: Anchor::Custom(Vec2::new(-0.25, -0.25)),
-                row_number: 0,
+                frame_count: 10,
+                anchor: Anchor::Center,
+                row_number: 2,
+            },
+            turn: AnimationResource {
+                squares: vec![],
+                duration: Duration::from_secs_f32(0.8),
+                frame_count: 7,
+                anchor: Anchor::Center,
+                row_number: 3,
             },
             drop: AnimationResource {
                 squares: vec![RIGHT, DOWN + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
-                frame_count: 12,
-                anchor: Anchor::Custom(Vec2::new(-0.25, 0.25)),
-                row_number: 0,
+                frame_count: 11,
+                anchor: Anchor::Center,
+                row_number: 4,
             },
             drop2: AnimationResource {
                 squares: vec![RIGHT, DOWN + RIGHT, DOWN + DOWN + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 12,
-                anchor: Anchor::Custom(Vec2::new(-0.25, 0.25)),
-                row_number: 0,
+                anchor: Anchor::Custom(Vec2::new(0.0, 0.25)),
+                row_number: 5,
             },
             jump: AnimationResource {
                 squares: vec![RIGHT, UP, RIGHT + UP, RIGHT + UP + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
-                frame_count: 11,
-                anchor: Anchor::Custom(Vec2::new(-0.25, -0.25)),
-                row_number: 0,
-            },
-            turn: AnimationResource {
-                squares: vec![],
-                duration: Duration::from_secs_f32(0.4),
-                frame_count: 7,
-                anchor: Anchor::Center,
-                row_number: 0,
+                frame_count: 13,
+                anchor: Anchor::Custom(Vec2::new(-0.25, 0.0)),
+                row_number: 6,
             },
             texture,
             layout,
