@@ -8,7 +8,7 @@ use crate::{
     audio::Music,
     demo::{action::ScriptCommand, level::spawn_level as spawn_level_command, player::PlayerState},
     screens::Screen,
-    theme::prelude::*,
+    theme::{palette::LABEL_TEXT, prelude::*},
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -26,6 +26,13 @@ pub(super) fn plugin(app: &mut App) {
 
 #[derive(Component)]
 pub struct Editor;
+
+#[derive(Component)]
+pub struct AutoplayLabel;
+impl AutoplayLabel {
+    pub const DISABLED: &'static str = "Autoplay disabled (toggle G) (step F)";
+    pub const ENABLED: &'static str = "Autoplay enabled (toggle G)";
+}
 
 fn spawn_level(mut commands: Commands) {
     commands.add(spawn_level_command);
@@ -46,6 +53,29 @@ fn spawn_level(mut commands: Commands) {
         .insert(StateScoped(Screen::Gameplay))
         .with_children(|children| {
             children.text_input();
+            children
+                .spawn(NodeBundle {
+                    style: Style {
+                        width: Percent(100.0),
+                        height: Percent(100.0),
+                        justify_content: JustifyContent::End,
+                        align_items: AlignItems::Start,
+                        flex_direction: FlexDirection::Column,
+                        row_gap: Px(10.0),
+                        ..default()
+                    },
+                    ..default()
+                })
+                .with_children(|children| {
+                    children.spawn((
+                        AutoplayLabel,
+                        TextBundle::from_section(AutoplayLabel::ENABLED, TextStyle {
+                            font_size: 24.0,
+                            color: LABEL_TEXT,
+                            ..default()
+                        }),
+                    ));
+                });
         });
 }
 

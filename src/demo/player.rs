@@ -21,7 +21,10 @@ use crate::{
         level::{NextGridTransform, Reset, TickStart},
         obstacle::Obstacle,
     },
-    screens::{gameplay::Editor, Screen},
+    screens::{
+        gameplay::{AutoplayLabel, Editor},
+        Screen,
+    },
     AppSet,
 };
 
@@ -173,6 +176,7 @@ fn update_animation(
     level: Res<Level>,
     editor_inactive: Query<&TextInputInactive, With<Editor>>,
     mut tick_start: EventWriter<TickStart>,
+    mut autoplay_label: Query<&mut Text, With<AutoplayLabel>>,
 ) {
     let Ok((pos, mut next_pos)) = player.get_single_mut() else {
         return;
@@ -180,7 +184,14 @@ fn update_animation(
 
     // toggle autoplay
     if input.just_pressed(KeyCode::KeyG) {
+        let mut autoplay_label = autoplay_label.single_mut();
+
         state.autoplay = !state.autoplay;
+        let value = match state.autoplay {
+            true => AutoplayLabel::ENABLED,
+            false => AutoplayLabel::DISABLED,
+        };
+        *autoplay_label = Text::from_section(value, autoplay_label.sections[0].style.clone());
     }
 
     // make sure that the editor is inactive before allowing any movement
