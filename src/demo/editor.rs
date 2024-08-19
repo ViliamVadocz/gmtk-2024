@@ -190,7 +190,8 @@ fn edit_script(
 
 #[derive(Default)]
 pub struct ShowEditor {
-    pub active: Option<usize>,
+    // (currently executed, succes)
+    pub active: Option<(usize, bool)>,
 }
 
 impl Command for ShowEditor {
@@ -239,8 +240,10 @@ fn show_script(
 
             let mut color = make_color(total);
             // when executing, gray out all non active commands
-            if config.active == Some(i) {
+            if config.active == Some((i, true)) {
                 color = Color::linear_rgba(0.0, 0.5, 0.0, 1.0);
+            } else if config.active == Some((i, false)) {
+                color = Color::linear_rgba(0.5, 0.5, 0.0, 1.0);
             }
             spawn_editor_item(&editor_assets, children, command, color);
             total += 1;

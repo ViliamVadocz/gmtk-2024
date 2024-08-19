@@ -224,10 +224,11 @@ fn update_animation(
 
     // check if we have script to execute
     if input.pressed(KeyCode::KeyF) || state.autoplay {
-        commands.add(ShowEditor {
-            active: Some(state.cursor),
-        });
+        let current = state.cursor;
         state.animation = action_interpreter(&mut state, pos, &level, assets.unwrap());
+        commands.add(ShowEditor {
+            active: Some((current, state.animation.is_some())),
+        });
     }
 
     if let Some(animation) = &state.animation {
