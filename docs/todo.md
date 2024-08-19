@@ -8,13 +8,7 @@
     - enforce restrictions
     - saving state (browser storage, file, idk)
 - gameplay
-    - drop arbitrarily far down
     - speed up simulation?
-- obstacles
-    - hazards (collision = reset)
-    - movement on tick / action
-- level
-    - hardcode it / make a level parser
 
 - sounds / music
     - sound for each action
@@ -31,10 +25,8 @@
     - background
     - font
 - UI
-    - action selection
     - show action cursor during play
     - textbox for "invalid input" (mismatched brackets, unknown letters)
-    - show if autoplay is enabled
     - main menu pretty
     - logo / icon (splash)
     - credits
@@ -46,7 +38,3 @@
     - tutorial (in text?)
     - big signs in BG explaining with pictures
     - options screen for remapping controls (accessibility)
-
-
-(" (jwj))wc "
-
