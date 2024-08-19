@@ -5,10 +5,7 @@ use bevy::{
 
 use super::{animation::PlayerAssets, level::GridTransform};
 use crate::{
-    demo::{
-        action::{DOWN, UP},
-        level::{AnimationTick, NextGridTransform, Reset, TickStart, WorldGrid},
-    },
+    demo::level::{AnimationTick, NextGridTransform, Reset, TickStart, WorldGrid},
     screens::Screen,
     AppSet,
 };
@@ -25,7 +22,7 @@ pub struct Player;
 #[derive(Debug, Clone)]
 pub struct SpawnObstacle {
     pub pos: IVec2,
-    pub going_up: bool,
+    pub dir: IVec2,
 }
 
 impl Command for SpawnObstacle {
@@ -36,7 +33,7 @@ impl Command for SpawnObstacle {
 
 #[derive(Component)]
 pub struct Obstacle {
-    going_up: bool,
+    dir: IVec2,
     spawn: SpawnObstacle,
 }
 
@@ -48,7 +45,7 @@ fn spawn_obstacle(
     commands.spawn((
         Name::new("Obstacle"),
         Obstacle {
-            going_up: config.going_up,
+            dir: config.dir,
             spawn: config.clone(),
         },
         SpriteBundle {
@@ -83,14 +80,11 @@ fn movement(
     let ticks = tick_start.read().count();
     for (mut grid, mut next_grid, mut world, mut obstacle) in &mut o {
         if ticks % 2 == 1 {
-            next_grid.0 = match obstacle.going_up {
-                true => grid.0 + UP,
-                false => grid.0 + DOWN,
-            };
-            obstacle.going_up = !obstacle.going_up;
+            next_grid.0 = grid.0 + obstacle.dir;
+            obstacle.dir = -obstacle.dir;
         }
         if reset {
-            obstacle.going_up = obstacle.spawn.going_up;
+            obstacle.dir = obstacle.spawn.dir;
             grid.0 = obstacle.spawn.pos;
             next_grid.0 = obstacle.spawn.pos;
         }

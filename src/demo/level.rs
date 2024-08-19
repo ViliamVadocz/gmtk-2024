@@ -4,12 +4,13 @@ use bevy::{
     ecs::{system::RunSystemOnce, world::Command},
     prelude::*,
     render::texture::{ImageLoaderSettings, ImageSampler},
+    utils::HashMap,
 };
 use bevy_ecs_tilemap::prelude::*;
 
 use crate::{
     asset_tracking::LoadResource,
-    demo::{obstacle::SpawnObstacle, player::SpawnPlayer},
+    demo::{action::{ScriptCommand, DOWN, UP}, obstacle::SpawnObstacle, player::SpawnPlayer},
     AppSet,
 };
 
@@ -80,6 +81,18 @@ pub fn spawn_level(world: &mut World) {
                     Tile::CheckPoint => 1,
                     _ => 0,
                 };
+                let obstacle = match tile {
+                    Tile::Down => Some(DOWN),
+                    Tile::Up => Some(UP),
+                    Tile::Static => Some(IVec2::ZERO),
+                    _ => None
+                };
+                if let Some(dir) = obstacle {
+                    commands.add(SpawnObstacle {
+                        pos: IVec2::new(x as i32, y as i32),
+                        dir,
+                    });
+                }
                 let tile_entity = commands
                     .spawn(TileBundle {
                         position: tile_pos,
@@ -115,19 +128,13 @@ pub fn spawn_level(world: &mut World) {
     );
 
     SpawnPlayer.apply(world);
-    SpawnObstacle {
-        pos: IVec2::new(8, 1),
-        going_up: true,
-    }
-    .apply(world)
 }
 
-#[derive(Resource, Reflect, Debug)]
-#[reflect(Resource)]
+#[derive(Resource, Debug)]
 pub struct Level {
     terrain: Vec<Tile>,
     row_size: usize,
-    unlocks: [(usize, usize); 3],
+    unlocks: HashMap<IVec2, ScriptCommand>,
     pub last_checkpoint: IVec2,
 }
 
@@ -136,6 +143,9 @@ enum Tile {
     Air,
     Ground,
     CheckPoint,
+    Down,
+    Up,
+    Static,
 }
 
 /// Temporary hardcoded level for testing.
@@ -144,25 +154,31 @@ impl Default for Level {
         let o = Tile::Air;
         let x = Tile::Ground;
         let i = Tile::CheckPoint;
+        let d = Tile::Down;
+        let u = Tile::Up;
+        let s = Tile::Static;
         #[rustfmt::skip]
         let terrain = vec![
-            x, o, o, o, o, o, o, o, o, i, o, o, o, o, o, x,
-            x, o, o, o, o, o, o, o, x, x, x, o, o, o, o, x,
-            x, i, o, o, x, x, x, o, o, o, o, o, o, o, o, x,
-            x, x, x, o, o, o, o, o, o, o, o, x, o, o, o, x,
-            o, o, x, x, o, o, o, o, o, o, o, o, o, i, o, x,
-            o, o, o, x, x, o, o, o, o, o, o, x, x, x, x, x,
-            o, o, o, o, x, x, x, x, x, x, x, x, o, o, o, o,
+            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,i,o,o,o,o,o,o,s,o,o,o,
+            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,o,o,x,x,o,o,o,o,o,o,x,o,o,o,
+            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,x,x,o,o,o,o,x,o,o,s,o,o,
+            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,x,x,x,x,x,o,o,o,o,x,o,o,
+            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,i,o,o,o,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,
+            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,o,o,o,
+            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,x,x,x,x,o,x,x,x,x,x,x,
+            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,s,x,x,x,x,x,x,
+            o,o,o,o,o,o,o,o,d,o,o,o,d,o,o,o,o,o,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,
+            o,o,o,o,o,o,i,o,o,o,u,o,o,o,i,o,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,
+            o,o,o,i,o,x,x,x,x,x,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,
+            x,x,x,x,x,x,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
         ];
 
-        let spawn = (1, 6);
-        let unlocks = [(1, 9), (2, 13), (4, 1)];
 
         Self {
             terrain,
-            row_size: 16,
-            last_checkpoint: IVec2::new(spawn.1, spawn.0),
-            unlocks,
+            row_size: 48,
+            last_checkpoint: IVec2::new(0, 1),
+            unlocks: HashMap::new(),
         }
     }
 }
