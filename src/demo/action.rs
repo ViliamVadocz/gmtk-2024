@@ -23,14 +23,14 @@ pub enum ScriptCommand {
 }
 
 impl ScriptCommand {
-    pub fn get_resource(self, assets: &PlayerAssets) -> &AnimationResource {
+    pub fn get_resource(self, assets: &PlayerAssets) -> Vec<&AnimationResource> {
         match self {
-            ScriptCommand::Walk => &assets.walk,
-            ScriptCommand::Climb => &assets.climb,
-            ScriptCommand::Drop => &assets.drop,
-            ScriptCommand::Idle => &assets.idle,
-            ScriptCommand::Turn => &assets.turn,
-            ScriptCommand::Jump => &assets.jump,
+            ScriptCommand::Walk => vec![&assets.walk],
+            ScriptCommand::Climb => vec![&assets.climb],
+            ScriptCommand::Drop => vec![&assets.drop, &assets.drop2],
+            ScriptCommand::Idle => vec![&assets.idle],
+            ScriptCommand::Turn => vec![&assets.turn],
+            ScriptCommand::Jump => vec![&assets.jump],
             ScriptCommand::CloseBracket => unreachable!(),
             ScriptCommand::OpenBracket => unreachable!(),
         }
@@ -60,8 +60,13 @@ impl Level {
         assets: &PlayerAssets,
     ) -> Option<AnimationResource> {
         let anim = action.get_resource(assets);
-        let squares = &mut anim.squares.iter().copied();
-        let free = squares.all(|square| !self.is_solid(pos + square * IVec2::new(x_dir, 1)));
-        (free && self.is_solid(pos + anim.final_offset(x_dir) + DOWN)).then(|| anim.clone())
+        anim.into_iter()
+            .find(|anim| {
+                let mut squares = anim.squares.iter().copied();
+                let free =
+                    squares.all(|square| !self.is_solid(pos + square * IVec2::new(x_dir, 1)));
+                free && self.is_solid(pos + anim.final_offset(x_dir) + DOWN)
+            })
+            .cloned()
     }
 }

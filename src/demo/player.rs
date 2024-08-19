@@ -190,7 +190,7 @@ fn update_animation(
         pos.0 += prev_anim.final_offset(state.x_dir);
         next_tick.send(NextTick);
 
-        if level.is_checkpoint(pos.0) {
+        if level.is_checkpoint(pos.0) && level.last_checkpoint != pos.0 {
             level.last_checkpoint = pos.0;
             reset.send(Reset);
         }

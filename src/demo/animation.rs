@@ -105,6 +105,9 @@ pub struct PlayerAssets {
     pub drop: AnimationResource,
 
     #[dependency]
+    pub drop2: AnimationResource,
+
+    #[dependency]
     pub jump: AnimationResource,
 
     #[dependency]
@@ -180,9 +183,17 @@ impl FromWorld for PlayerAssets {
                 anchor: Anchor::Custom(Vec2::new(-0.25, -0.25)),
             },
             drop: AnimationResource {
+                texture: drop_texture.clone(),
+                atlas: drop_atlas.clone(),
+                squares: vec![RIGHT, DOWN + RIGHT],
+                duration: Duration::from_secs_f32(0.8),
+                frame_count: 12,
+                anchor: Anchor::Custom(Vec2::new(-0.25, 0.25)),
+            },
+            drop2: AnimationResource {
                 texture: drop_texture,
                 atlas: drop_atlas,
-                squares: vec![RIGHT, DOWN + RIGHT],
+                squares: vec![RIGHT, DOWN + RIGHT, DOWN + DOWN + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 12,
                 anchor: Anchor::Custom(Vec2::new(-0.25, 0.25)),

@@ -149,7 +149,7 @@ impl Default for Level {
             x, o, o, o, o, o, o, o, o, i, o, o, o, o, o, x,
             x, o, o, o, o, o, o, o, x, x, x, o, o, o, o, x,
             x, i, o, o, x, x, x, o, o, o, o, o, o, o, o, x,
-            x, x, x, o, o, o, o, o, o, o, o, o, o, o, o, x,
+            x, x, x, o, o, o, o, o, o, o, o, x, o, o, o, x,
             o, o, x, x, o, o, o, o, o, o, o, o, o, i, o, x,
             o, o, o, x, x, o, o, o, o, o, o, x, x, x, x, x,
             o, o, o, o, x, x, x, x, x, x, x, x, o, o, o, o,
