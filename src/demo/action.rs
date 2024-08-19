@@ -10,7 +10,7 @@ pub const DOWN: IVec2 = IVec2::new(0, -1);
 // pub const LEFT: IVec2 = IVec2::new(-1, 0);
 pub const RIGHT: IVec2 = IVec2::new(1, 0);
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum ScriptCommand {
     Walk,
     Climb,
