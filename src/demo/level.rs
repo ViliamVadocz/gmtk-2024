@@ -167,8 +167,8 @@ impl Default for Level {
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,o,o,
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,x,x,o,o,o,o,x,x,x,x,x,
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,o,x,x,x,x,x,x,x,x,
-            o,o,o,o,o,o,o,o,d,o,o,o,d,o,o,o,o,o,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,
-            o,o,o,o,o,o,i,o,o,o,u,o,o,o,i,o,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
+            o,o,o,o,o,o,o,o,o,o,d,o,o,o,o,o,o,o,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,
+            o,o,o,o,o,o,i,o,u,o,o,o,u,o,i,o,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
             o,o,o,i,o,x,x,x,x,x,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
             x,x,x,x,x,x,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
         ];
