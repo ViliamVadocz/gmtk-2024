@@ -146,7 +146,7 @@ fn respawn(
         collided |= o_pos.0 == pos.0;
     }
 
-    if state.animation.is_some() && level.is_checkpoint(pos.0) && level.last_checkpoint != pos.0 {
+    if level.is_checkpoint(pos.0) && level.last_checkpoint != pos.0 {
         level.last_checkpoint = pos.0;
         collided = true;
     }
