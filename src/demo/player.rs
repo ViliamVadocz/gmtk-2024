@@ -276,12 +276,19 @@ fn update_animation(
         });
     }
 
+    let multiplier = if state.autoplay && input.pressed(KeyCode::KeyF) {
+        0.25
+    } else {
+        1.0
+    };
+
     if let Some(animation) = &state.animation {
         tick_start.send(TickStart);
-        tick.0.set_duration(animation.duration);
+        tick.0.set_duration(animation.duration.mul_f32(multiplier));
         next_pos.0 = pos.0 + animation.final_offset(state.x_dir)
     } else {
-        tick.0.set_duration(Duration::from_secs_f32(0.25));
+        tick.0
+            .set_duration(Duration::from_secs_f32(0.25).mul_f32(multiplier));
     }
     tick.0.reset();
 }
