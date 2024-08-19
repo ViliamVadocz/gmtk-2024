@@ -26,6 +26,10 @@ fn edit_script(
     mut editor_state: ResMut<EditorState>,
     mut editor_changed: EventWriter<EditorChanged>,
 ) {
+    if !editor_state.enabled {
+        return;
+    }
+
     let mut changed = false;
 
     // Command input.
