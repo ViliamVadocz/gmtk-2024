@@ -253,12 +253,7 @@ pub fn update_tick_timer(
     time: Res<Time>,
     mut tick: ResMut<AnimationTick>,
     mut q: Query<(&mut GridTransform, &NextGridTransform)>,
-    mut tick_start: EventReader<TickStart>,
 ) {
-    if tick_start.read().count() != 0 {
-        tick.0.reset();
-    }
-
     tick.0.tick(time.delta());
 
     if tick.0.just_finished() {
