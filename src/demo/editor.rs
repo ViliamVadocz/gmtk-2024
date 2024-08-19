@@ -216,7 +216,8 @@ fn show_script(
     editor_assets: Res<EditorAssets>,
     level: Res<Level>,
 ) {
-    let bracket_balance = calculate_bracket_balance(&editor_state.entered);
+    let open = calculate_open_required(&editor_state.entered);
+    let close = calculate_close_required(&editor_state.entered);
 
     // Despawn all current editor item entities.
     for entity in &editor_items_query {
@@ -234,7 +235,7 @@ fn show_script(
         }
     };
     commands.entity(editor_ui).with_children(|children| {
-        for _ in bracket_balance..0 {
+        for _ in 0..open {
             let color = make_color(total).with_alpha(0.5);
             let command = ScriptCommand::OpenBracket;
             spawn_editor_item(&editor_assets, children, &command, color);
@@ -258,7 +259,7 @@ fn show_script(
         if editor_state.cursor == editor_state.entered.len() && config.active.is_none() {
             add_cursor(children, &editor_assets);
         }
-        for _ in 0..bracket_balance {
+        for _ in 0..close {
             let color = make_color(total).with_alpha(0.5);
             let command = ScriptCommand::CloseBracket;
             spawn_editor_item(&editor_assets, children, &command, color);
@@ -321,12 +322,24 @@ fn spawn_editor_item(
     ));
 }
 
-fn calculate_bracket_balance(script: &[ScriptCommand]) -> i32 {
-    let mut balance = 0;
+fn calculate_open_required(script: &[ScriptCommand]) -> usize {
+    let mut balance = 0usize;
+    for command in script.iter().rev() {
+        match command {
+            ScriptCommand::CloseBracket => balance += 1,
+            ScriptCommand::OpenBracket => balance = balance.saturating_sub(1),
+            _ => {}
+        }
+    }
+    balance
+}
+
+fn calculate_close_required(script: &[ScriptCommand]) -> usize {
+    let mut balance = 0usize;
     for command in script {
         match command {
             ScriptCommand::OpenBracket => balance += 1,
-            ScriptCommand::CloseBracket => balance -= 1,
+            ScriptCommand::CloseBracket => balance = balance.saturating_sub(1),
             _ => {}
         }
     }
@@ -349,11 +362,12 @@ fn submit_script(
     }
 
     // Fix sequence (brackets-wise)
-    let bracket_balance = calculate_bracket_balance(&editor_state.entered);
-    let new_sequence: Vec<_> = (bracket_balance..0)
+    let open = calculate_open_required(&editor_state.entered);
+    let close = calculate_close_required(&editor_state.entered);
+    let new_sequence: Vec<_> = (0..open)
         .map(|_| ScriptCommand::OpenBracket)
         .chain(editor_state.entered.drain(..))
-        .chain((0..bracket_balance).map(|_| ScriptCommand::CloseBracket))
+        .chain((0..close).map(|_| ScriptCommand::CloseBracket))
         .collect();
     editor_state.entered.clone_from(&new_sequence);
     editor_state.cursor = new_sequence.len();
