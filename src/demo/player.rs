@@ -193,11 +193,11 @@ fn respawn(
         let (new_unlock, new_count) = *level.unlocks.get(&pos.0).expect("unknown checkpoint");
         if !level.unlocked.contains(&new_unlock) {
             level.unlocked.push(new_unlock);
-            level.command_count = level.command_count.max(new_count);
             commands.add(AddUnlockedCommand {
                 command: new_unlock,
             });
         }
+        level.command_count = level.command_count.max(new_count);
 
         collided = true;
     }

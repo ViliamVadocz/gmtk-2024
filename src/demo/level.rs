@@ -167,11 +167,11 @@ impl Default for Level {
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,x,x,x,x,x,o,o,o,o,x,o,o,
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,i,o,o,o,x,o,o,o,o,o,o,o,o,o,o,o,o,s,o,x,o,o,o,o,
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,o,i,
-            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,x,x,o,o,o,o,x,x,x,x,x,
+            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,x,x,o,o,i,o,x,x,x,x,x,
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,o,x,x,x,x,x,x,x,x,
             o,o,o,o,o,o,o,o,o,o,d,o,o,o,o,o,o,o,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,
             o,o,o,o,o,o,i,o,u,o,o,o,u,o,i,o,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
-            o,o,o,i,o,x,x,x,x,x,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
+            o,o,o,i,o,x,x,x,x,x,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,i,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
             x,x,x,x,x,x,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
         ];
 
@@ -188,6 +188,8 @@ impl Default for Level {
                 (IVec2::new(24, 7), (ScriptCommand::OpenBracket, 5)),
                 (IVec2::new(37, 11), (ScriptCommand::Drop, 6)),
                 (IVec2::new(47, 6), (ScriptCommand::Turn, 7)),
+                (IVec2::new(41, 5), (ScriptCommand::Turn, 8)),
+                (IVec2::new(32, 1), (ScriptCommand::Turn, 9)),
             ].into_iter().collect(),
             command_count: 1,
             unlocked: vec![ScriptCommand::Walk]
