@@ -95,6 +95,6 @@ fn movement(
         let pos = old.lerp(new, tick.0.fraction());
         world.translation = proj.project_to_world(pos).extend(world.translation.z);
 
-        atlas.index = (tick.0.fraction() * 4.) as usize;
+        atlas.index = ((tick.0.fraction() * 4.) as usize).min(3);
     }
 }

@@ -59,7 +59,7 @@ fn apply_animation(
     transform.translation = new.extend(transform.translation.z);
 
     atlas.index = anim.row_number * (PlayerAssets::ANIM_COLUMNS as usize)
-        + (tick.0.fraction() * anim.frame_count as f32) as usize;
+        + ((tick.0.fraction() * anim.frame_count as f32) as usize).min(anim.frame_count - 1);
     if state.animation.is_none() {
         atlas.index = 0;
     }
