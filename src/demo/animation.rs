@@ -117,6 +117,7 @@ pub struct PlayerAssets {
 impl PlayerAssets {
     pub const PATH_CLIMB: &'static str = "images/climb.png";
     pub const PATH_DROP: &'static str = "images/drop.png";
+    pub const PATH_DROP2: &'static str = "images/drop2.png";
     pub const PATH_IDLE: &'static str = "images/idle.png";
     pub const PATH_TURN: &'static str = "images/turn.png";
     pub const PATH_WALK: &'static str = "images/walk.png";
@@ -135,6 +136,7 @@ impl FromWorld for PlayerAssets {
         let walk_texture = assets.load_with_settings(PlayerAssets::PATH_WALK, settings);
         let climb_texture = assets.load_with_settings(PlayerAssets::PATH_CLIMB, settings);
         let drop_texture = assets.load_with_settings(PlayerAssets::PATH_DROP, settings);
+        let drop2_texture = assets.load_with_settings(PlayerAssets::PATH_DROP2, settings);
         let turn_texture = assets.load_with_settings(PlayerAssets::PATH_TURN, settings);
 
         // A texture atlas is a way to split one image with a grid into multiple
@@ -155,6 +157,7 @@ impl FromWorld for PlayerAssets {
         let walk_atlas = layout(UVec2::new(32, 16), 4, 3);
         let climb_atlas = layout(UVec2::splat(32), 4, 3);
         let drop_atlas = layout(UVec2::splat(32), 4, 3);
+        let drop2_atlas = layout(UVec2::new(32, 48), 4, 3);
         let turn_atlas = layout(UVec2::splat(16), 7, 1);
 
         Self {
@@ -191,12 +194,12 @@ impl FromWorld for PlayerAssets {
                 anchor: Anchor::Custom(Vec2::new(-0.25, 0.25)),
             },
             drop2: AnimationResource {
-                texture: drop_texture,
-                atlas: drop_atlas,
+                texture: drop2_texture,
+                atlas: drop2_atlas,
                 squares: vec![RIGHT, DOWN + RIGHT, DOWN + DOWN + RIGHT],
                 duration: Duration::from_secs_f32(0.8),
                 frame_count: 12,
-                anchor: Anchor::Custom(Vec2::new(-0.25, 0.25)),
+                anchor: Anchor::Custom(Vec2::new(-0.25, 1.0 / 3.0)),
             },
             jump: AnimationResource {
                 texture: climb_texture,
