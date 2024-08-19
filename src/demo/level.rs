@@ -134,7 +134,9 @@ pub fn spawn_level(world: &mut World) {
 pub struct Level {
     terrain: Vec<Tile>,
     row_size: usize,
-    unlocks: HashMap<IVec2, ScriptCommand>,
+    pub unlocks: HashMap<IVec2, (ScriptCommand, usize)>,
+    pub unlocked: Vec<ScriptCommand>,
+    pub command_count: usize,
     pub last_checkpoint: IVec2,
 }
 
@@ -164,7 +166,7 @@ impl Default for Level {
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,x,x,o,o,o,o,x,o,o,s,o,o,
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,x,x,x,x,x,o,o,o,o,x,o,o,
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,i,o,o,o,x,o,o,o,o,o,o,o,o,o,o,o,o,s,o,x,o,o,o,o,
-            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,o,o,
+            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,o,i,
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,x,x,o,o,o,o,x,x,x,x,x,
             o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,o,x,x,x,x,x,x,x,x,
             o,o,o,o,o,o,o,o,o,o,d,o,o,o,o,o,o,o,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,
@@ -178,7 +180,17 @@ impl Default for Level {
             terrain,
             row_size: 48,
             last_checkpoint: IVec2::new(0, 1),
-            unlocks: HashMap::new(),
+            unlocks: vec![
+                (IVec2::new(3, 1), (ScriptCommand::Climb, 2)),
+                (IVec2::new(6, 2), (ScriptCommand::Idle, 3)),
+                (IVec2::new(6, 2), (ScriptCommand::Idle, 3)),
+                (IVec2::new(14, 2), (ScriptCommand::Jump, 4)),
+                (IVec2::new(24, 7), (ScriptCommand::OpenBracket, 5)),
+                (IVec2::new(37, 11), (ScriptCommand::Drop, 6)),
+                (IVec2::new(47, 6), (ScriptCommand::Turn, 7)),
+            ].into_iter().collect(),
+            command_count: 1,
+            unlocked: vec![ScriptCommand::Walk]
         }
     }
 }
