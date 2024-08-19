@@ -56,7 +56,7 @@ impl Plugin for AppPlugin {
                 })
                 .set(AudioPlugin {
                     global_volume: GlobalVolume {
-                        volume: Volume::new(0.1),
+                        volume: Volume::new(0.0),
                     },
                     ..default()
                 }),
