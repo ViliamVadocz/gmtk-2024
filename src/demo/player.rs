@@ -18,11 +18,14 @@ use super::{
 use crate::{
     asset_tracking::LoadResource,
     demo::{
-        editor::ShowEditor,
+        editor::{EditorAssets, ShowEditor},
         level::{NextGridTransform, Reset, TickStart},
         obstacle::Obstacle,
     },
-    screens::{gameplay::AutoplayLabel, Screen},
+    screens::{
+        gameplay::{AutoplayLabel, UnlockedList},
+        Screen,
+    },
     AppSet,
 };
 
@@ -129,6 +132,42 @@ fn debug_actions(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Optio
     action
 }
 
+pub struct AddUnlockedCommand {
+    pub command: ScriptCommand,
+}
+
+impl Command for AddUnlockedCommand {
+    fn apply(self, world: &mut World) {
+        world.run_system_once_with(self, add_unlock)
+    }
+}
+
+fn add_unlock(
+    config: In<AddUnlockedCommand>,
+    unlocked_list: Query<Entity, With<UnlockedList>>,
+    editor_assets: Res<EditorAssets>,
+    mut commands: Commands,
+) {
+    commands
+        .entity(unlocked_list.single())
+        .with_children(|children| {
+            children.spawn((
+                ImageBundle {
+                    style: Style {
+                        height: Val::Percent(10.0),
+                        ..default()
+                    },
+                    image: UiImage::new(editor_assets.icons.clone()),
+                    ..default()
+                },
+                TextureAtlas {
+                    layout: editor_assets.atlas.clone(),
+                    index: EditorAssets::get_atlas_index(&config.command),
+                },
+            ));
+        });
+}
+
 fn respawn(
     mut state: ResMut<PlayerState>,
     mut player: Query<(&mut GridTransform, &mut NextGridTransform), With<Player>>,
@@ -155,6 +194,9 @@ fn respawn(
         if !level.unlocked.contains(&new_unlock) {
             level.unlocked.push(new_unlock);
             level.command_count = level.command_count.max(new_count);
+            commands.add(AddUnlockedCommand {
+                command: new_unlock,
+            });
         }
 
         collided = true;

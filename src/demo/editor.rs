@@ -5,7 +5,11 @@ use bevy::{
 };
 
 use super::{action::ScriptCommand, player::PlayerState};
-use crate::{asset_tracking::LoadResource, demo::level::Level, screens::Screen};
+use crate::{
+    asset_tracking::LoadResource,
+    demo::{level::Level, player::AddUnlockedCommand},
+    screens::Screen,
+};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<EditorState>();
@@ -16,7 +20,10 @@ pub(super) fn plugin(app: &mut App) {
     );
     // Send `EditorChanged` event at start.
     app.add_systems(OnEnter(Screen::Gameplay), |mut ev: Commands| {
-        ev.add(ShowEditor::default())
+        ev.add(ShowEditor::default());
+        ev.add(AddUnlockedCommand {
+            command: ScriptCommand::Walk,
+        });
     });
 }
 
@@ -61,7 +68,7 @@ impl EditorAssets {
     pub const PATH_CURSOR: &'static str = "images/cursor.png";
     pub const PATH_ICONS: &'static str = "images/icons.png";
 
-    fn get_atlas_index(command: &ScriptCommand) -> usize {
+    pub fn get_atlas_index(command: &ScriptCommand) -> usize {
         match command {
             ScriptCommand::Walk => 0,
             ScriptCommand::Climb => 1,

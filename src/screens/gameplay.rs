@@ -25,6 +25,9 @@ impl AutoplayLabel {
     pub const ENABLED: &'static str = "Autoplay enabled (toggle G)";
 }
 
+#[derive(Component)]
+pub struct UnlockedList;
+
 fn spawn_level(mut commands: Commands) {
     commands.add(spawn_level_command);
     commands
@@ -68,14 +71,39 @@ fn spawn_level(mut commands: Commands) {
                     ..default()
                 })
                 .with_children(|children| {
-                    children.spawn((
-                        AutoplayLabel,
-                        TextBundle::from_section(AutoplayLabel::ENABLED, TextStyle {
-                            font_size: 24.0,
-                            color: LABEL_TEXT,
+                    children
+                        .spawn(NodeBundle {
+                            style: Style {
+                                width: Percent(100.0),
+                                height: Percent(100.0),
+                                justify_content: JustifyContent::Start,
+                                align_items: AlignItems::End,
+                                flex_direction: FlexDirection::Row,
+                                ..default()
+                            },
                             ..default()
-                        }),
-                    ));
+                        })
+                        .with_children(|children| {
+                            children.spawn((
+                                AutoplayLabel,
+                                TextBundle::from_section(AutoplayLabel::ENABLED, TextStyle {
+                                    font_size: 24.0,
+                                    color: LABEL_TEXT,
+                                    ..default()
+                                }),
+                            ));
+                            children.spawn((Name::new("Editor UI"), UnlockedList, NodeBundle {
+                                style: Style {
+                                    width: Percent(100.0),
+                                    height: Percent(100.0),
+                                    justify_content: JustifyContent::End,
+                                    align_items: AlignItems::End,
+                                    flex_direction: FlexDirection::Row,
+                                    ..default()
+                                },
+                                ..default()
+                            }));
+                        });
                 });
         });
 }
