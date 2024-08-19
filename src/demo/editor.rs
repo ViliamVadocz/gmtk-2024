@@ -1,26 +1,23 @@
 use bevy::{
+    ecs::{system::RunSystemOnce, world::Command},
     prelude::*,
     render::texture::{ImageLoaderSettings, ImageSampler},
 };
 
 use super::{action::ScriptCommand, player::PlayerState};
-use crate::{asset_tracking::LoadResource, screens::Screen};
+use crate::{asset_tracking::LoadResource, demo::level::Level, screens::Screen};
 
 pub(super) fn plugin(app: &mut App) {
     app.init_resource::<EditorState>();
     app.load_resource::<EditorAssets>();
-    app.add_event::<EditorChanged>();
     app.add_systems(
         Update,
-        ((edit_script, show_script).chain(), submit_script).run_if(in_state(Screen::Gameplay)),
+        (edit_script, submit_script).run_if(in_state(Screen::Gameplay)),
     );
     // Send `EditorChanged` event at start.
-    app.add_systems(
-        OnEnter(Screen::Gameplay),
-        |mut ev: EventWriter<EditorChanged>| {
-            ev.send_default();
-        },
-    );
+    app.add_systems(OnEnter(Screen::Gameplay), |mut ev: Commands| {
+        ev.add(ShowEditor::default())
+    });
 }
 
 #[derive(Resource, Debug)]
@@ -38,11 +35,6 @@ impl Default for EditorState {
             cursor: Default::default(),
         }
     }
-}
-
-#[derive(Event, Debug, Default)]
-pub struct EditorChanged {
-    pub active: Option<usize>,
 }
 
 #[derive(Component, Reflect, Debug)]
@@ -107,7 +99,7 @@ impl FromWorld for EditorAssets {
         let atlas = texture_atlas_layouts.add(TextureAtlasLayout::from_grid(
             UVec2::splat(16),
             1,
-            8,
+            9,
             None,
             None,
         ));
@@ -123,7 +115,7 @@ impl FromWorld for EditorAssets {
 fn edit_script(
     input: Res<ButtonInput<KeyCode>>,
     mut editor_state: ResMut<EditorState>,
-    mut editor_changed: EventWriter<EditorChanged>,
+    mut commands: Commands,
 ) {
     if !editor_state.enabled {
         return;
@@ -187,22 +179,30 @@ fn edit_script(
     }
 
     if changed {
-        editor_changed.send_default();
+        commands.add(ShowEditor::default());
+    }
+}
+
+#[derive(Default)]
+pub struct ShowEditor {
+    pub active: Option<usize>,
+}
+
+impl Command for ShowEditor {
+    fn apply(self, world: &mut World) {
+        world.run_system_once_with(self, show_script)
     }
 }
 
 fn show_script(
+    config: In<ShowEditor>,
     editor_state: Res<EditorState>,
-    mut editor_changed: EventReader<EditorChanged>,
     mut commands: Commands,
     editor_ui_query: Query<Entity, With<EditorUI>>,
     editor_items_query: Query<Entity, (With<EditorItem>, Without<EditorUI>)>,
     editor_assets: Res<EditorAssets>,
+    level: Res<Level>,
 ) {
-    let Some(event) = editor_changed.read().next() else {
-        return;
-    };
-
     let bracket_balance = calculate_bracket_balance(&editor_state.entered);
 
     // Despawn all current editor item entities.
@@ -212,37 +212,59 @@ fn show_script(
 
     // Spawn new editor items.
     let editor_ui = editor_ui_query.single();
+    let mut total = 0;
+    let make_color = |index| {
+        if index < level.command_count {
+            Color::linear_rgba(0.0, 0.0, 0.0, 1.0)
+        } else {
+            Color::linear_rgba(1.0, 0.0, 0.0, 1.0)
+        }
+    };
     commands.entity(editor_ui).with_children(|children| {
         for _ in bracket_balance..0 {
-            spawn_editor_item(
-                &editor_assets,
-                children,
-                &ScriptCommand::OpenBracket,
-                Color::linear_rgba(0.0, 0.0, 0.0, 0.5),
-            );
+            let color = make_color(total).with_alpha(0.5);
+            let command = ScriptCommand::OpenBracket;
+            spawn_editor_item(&editor_assets, children, &command, color);
+            total += 1;
         }
         for (i, command) in editor_state.entered.iter().enumerate() {
-            if i == editor_state.cursor && event.active.is_none() {
+            if i == editor_state.cursor && config.active.is_none() {
                 add_cursor(children, &editor_assets);
             }
 
-            let mut color = Color::linear_rgba(0.0, 0.0, 0.0, 1.0);
+            let mut color = make_color(total);
             // when executing, gray out all non active commands
-            if event.active.is_some() && event.active != Some(i) {
-                color = Color::linear_rgba(0.0, 0.0, 0.0, 0.5);
+            if config.active == Some(i) {
+                color = Color::linear_rgba(0.0, 0.5, 0.0, 1.0);
             }
             spawn_editor_item(&editor_assets, children, command, color);
+            total += 1;
         }
-        if editor_state.cursor == editor_state.entered.len() && event.active.is_none() {
+        if editor_state.cursor == editor_state.entered.len() && config.active.is_none() {
             add_cursor(children, &editor_assets);
         }
         for _ in 0..bracket_balance {
-            spawn_editor_item(
-                &editor_assets,
-                children,
-                &ScriptCommand::CloseBracket,
-                Color::linear_rgba(0.0, 0.0, 0.0, 0.5),
-            );
+            let color = make_color(total).with_alpha(0.5);
+            let command = ScriptCommand::CloseBracket;
+            spawn_editor_item(&editor_assets, children, &command, color);
+            total += 1;
+        }
+        for _ in total..level.command_count {
+            children.spawn((
+                ImageBundle {
+                    style: Style {
+                        height: Val::Percent(100.0),
+                        ..default()
+                    },
+                    image: UiImage::new(editor_assets.icons.clone()),
+                    ..default()
+                },
+                TextureAtlas {
+                    layout: editor_assets.atlas.clone(),
+                    index: 8,
+                },
+                EditorItem,
+            ));
         }
     });
 }
@@ -300,7 +322,7 @@ fn submit_script(
     input: Res<ButtonInput<KeyCode>>,
     mut editor_state: ResMut<EditorState>,
     mut player_state: ResMut<PlayerState>,
-    mut editor_changed: EventWriter<EditorChanged>,
+    mut commands: Commands,
 ) {
     if !input.just_pressed(KeyCode::Enter) {
         return;
@@ -320,7 +342,7 @@ fn submit_script(
     editor_state.entered.clone_from(&new_sequence);
     editor_state.cursor = new_sequence.len();
     // Send event to update the editor view.
-    editor_changed.send_default();
+    commands.add(ShowEditor::default());
 
     // TODO: sequence checks (unlock-based stuff)
 
