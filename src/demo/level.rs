@@ -23,6 +23,7 @@ pub(super) fn plugin(app: &mut App) {
         size: Vec2::splat(64.),
     });
     app.add_event::<NextTick>();
+    app.add_event::<Reset>();
     app.insert_resource(AnimationTick(Timer::from_seconds(0.2, TimerMode::Once)));
     app.init_resource::<Level>();
     app.load_resource::<LevelAssets>();
@@ -221,3 +222,6 @@ pub fn update_tick_timer(time: Res<Time>, mut tick: ResMut<AnimationTick>) {
 
 #[derive(Event)]
 pub struct NextTick;
+
+#[derive(Event)]
+pub struct Reset;

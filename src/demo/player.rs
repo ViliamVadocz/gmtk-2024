@@ -17,7 +17,10 @@ use super::{
 };
 use crate::{
     asset_tracking::LoadResource,
-    demo::{level::NextTick, obstacle::Obstacle},
+    demo::{
+        level::{NextTick, Reset},
+        obstacle::Obstacle,
+    },
     screens::{gameplay::Editor, Screen},
     AppSet,
 };
@@ -131,6 +134,7 @@ fn respawn(
     input: Res<ButtonInput<KeyCode>>,
     level: Res<Level>,
     mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
+    mut reset: EventReader<Reset>,
 ) {
     let Ok(mut pos) = player.get_single_mut() else {
         return;
@@ -141,7 +145,9 @@ fn respawn(
         collided |= o_pos.0 == pos.0;
     }
 
-    if input.just_pressed(KeyCode::KeyR) || collided {
+    let reset = reset.read().count() != 0;
+
+    if input.just_pressed(KeyCode::KeyR) || collided || reset {
         // respawn, reset all properties
         pos.0 = level.last_checkpoint;
         state.x_dir = 1;
@@ -161,6 +167,7 @@ fn update_animation(
     mut level: ResMut<Level>,
     editor_inactive: Query<&TextInputInactive, With<Editor>>,
     mut next_tick: EventWriter<NextTick>,
+    mut reset: EventWriter<Reset>,
 ) {
     let Ok(mut pos) = player.get_single_mut() else {
         return;
@@ -184,7 +191,8 @@ fn update_animation(
         next_tick.send(NextTick);
 
         if level.is_checkpoint(pos.0) {
-            level.last_checkpoint = pos.0
+            level.last_checkpoint = pos.0;
+            reset.send(Reset);
         }
     }
 

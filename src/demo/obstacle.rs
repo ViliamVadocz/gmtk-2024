@@ -7,7 +7,7 @@ use super::{animation::PlayerAssets, level::GridTransform};
 use crate::{
     demo::{
         action::{DOWN, UP},
-        level::{AnimationTick, NextTick, WorldGrid},
+        level::{AnimationTick, NextTick, Reset, WorldGrid},
         player::PlayerState,
     },
     screens::Screen,
@@ -23,7 +23,7 @@ pub(super) fn plugin(app: &mut App) {
 pub struct Player;
 
 /// A command to spawn the player character.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SpawnObstacle {
     pub pos: IVec2,
     pub going_up: bool,
@@ -38,6 +38,7 @@ impl Command for SpawnObstacle {
 #[derive(Component)]
 pub struct Obstacle {
     going_up: bool,
+    spawn: SpawnObstacle,
 }
 
 fn spawn_obstacle(
@@ -49,6 +50,7 @@ fn spawn_obstacle(
         Name::new("Obstacle"),
         Obstacle {
             going_up: config.going_up,
+            spawn: config.clone(),
         },
         SpriteBundle {
             texture: player_assets.idle.texture.clone(),
@@ -70,8 +72,10 @@ fn movement(
     tick: Res<AnimationTick>,
     proj: Res<WorldGrid>,
     mut next_tick: EventReader<NextTick>,
+    mut reset: EventReader<Reset>,
     state: Res<PlayerState>,
 ) {
+    let reset = reset.read().count() != 0;
     let ticks = next_tick.read().count();
     for (mut grid, mut world, mut obstacle) in &mut o {
         let dest = match obstacle.going_up {
@@ -82,6 +86,10 @@ fn movement(
         if ticks % 2 == 1 {
             obstacle.going_up = !obstacle.going_up;
             grid.0 = dest;
+        }
+        if reset {
+            obstacle.going_up = obstacle.spawn.going_up;
+            grid.0 = obstacle.spawn.pos;
         }
 
         let pos = if state.animation.is_some() {
