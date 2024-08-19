@@ -17,7 +17,7 @@ use super::{
 };
 use crate::{
     asset_tracking::LoadResource,
-    demo::level::NextTick,
+    demo::{level::NextTick, obstacle::Obstacle},
     screens::{gameplay::Editor, Screen},
     AppSet,
 };
@@ -127,6 +127,7 @@ fn debug_actions(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Optio
 fn respawn(
     mut state: ResMut<PlayerState>,
     mut player: Query<&mut GridTransform, With<Player>>,
+    obstacles: Query<&GridTransform, (With<Obstacle>, Without<Player>)>,
     input: Res<ButtonInput<KeyCode>>,
     level: Res<Level>,
     mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
@@ -135,7 +136,12 @@ fn respawn(
         return;
     };
 
-    if input.just_pressed(KeyCode::KeyR) {
+    let mut collided = false;
+    for o_pos in &obstacles {
+        collided |= o_pos.0 == pos.0;
+    }
+
+    if input.just_pressed(KeyCode::KeyR) || collided {
         // respawn, reset all properties
         pos.0 = level.last_checkpoint;
         state.x_dir = 1;

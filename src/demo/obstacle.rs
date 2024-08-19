@@ -36,7 +36,7 @@ impl Command for SpawnObstacle {
 }
 
 #[derive(Component)]
-struct Obstacle {
+pub struct Obstacle {
     going_up: bool,
 }
 
