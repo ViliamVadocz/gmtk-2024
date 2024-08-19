@@ -12,8 +12,7 @@ pub(super) fn plugin(app: &mut App) {
     app.add_event::<EditorChanged>();
     app.add_systems(
         Update,
-        ((edit_script, show_script).chain(), update_player_sequence)
-            .run_if(in_state(Screen::Gameplay)),
+        ((edit_script, show_script).chain(), submit_script).run_if(in_state(Screen::Gameplay)),
     );
 }
 
@@ -270,20 +269,35 @@ fn calculate_bracket_balance(script: &[ScriptCommand]) -> i32 {
     balance
 }
 
-fn update_player_sequence(
+fn submit_script(
     input: Res<ButtonInput<KeyCode>>,
     mut editor_state: ResMut<EditorState>,
     mut player_state: ResMut<PlayerState>,
+    mut editor_changed: EventWriter<EditorChanged>,
 ) {
     if !input.just_pressed(KeyCode::Enter) {
         return;
     }
-    // TODO: Other checks (unlock-based stuff?)
+
     if editor_state.entered.is_empty() {
         return;
     }
 
+    // Fix sequence (brackets-wise)
+    let bracket_balance = calculate_bracket_balance(&editor_state.entered);
+    let new_sequence: Vec<_> = (bracket_balance..0)
+        .map(|_| ScriptCommand::OpenBracket)
+        .chain(editor_state.entered.drain(..))
+        .chain((0..bracket_balance).map(|_| ScriptCommand::CloseBracket))
+        .collect();
+    editor_state.entered = new_sequence.clone();
+    editor_state.cursor = new_sequence.len();
+    // Send event to update the editor view.
+    editor_changed.send_default();
+
+    // TODO: sequence checks (unlock-based stuff)
+
     editor_state.enabled = false;
-    player_state.sequence = editor_state.entered.clone(); // TODO: Add missing brackets for balance (actually)
+    player_state.sequence = new_sequence;
     player_state.cursor = 0;
 }
