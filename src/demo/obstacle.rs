@@ -7,8 +7,7 @@ use super::{animation::PlayerAssets, level::GridTransform};
 use crate::{
     demo::{
         action::{DOWN, UP},
-        level::{AnimationTick, NextTick, Reset, WorldGrid},
-        player::PlayerState,
+        level::{AnimationTick, NextGridTransform, Reset, TickStart, WorldGrid},
     },
     screens::Screen,
     AppSet,
@@ -59,6 +58,7 @@ fn spawn_obstacle(
             ..Default::default()
         },
         GridTransform(config.pos),
+        NextGridTransform(config.pos),
         TextureAtlas {
             layout: player_assets.idle.atlas.clone(),
             index: 0,
@@ -68,35 +68,36 @@ fn spawn_obstacle(
 }
 
 fn movement(
-    mut o: Query<(&mut GridTransform, &mut Transform, &mut Obstacle)>,
+    mut o: Query<(
+        &mut GridTransform,
+        &mut NextGridTransform,
+        &mut Transform,
+        &mut Obstacle,
+    )>,
     tick: Res<AnimationTick>,
     proj: Res<WorldGrid>,
-    mut next_tick: EventReader<NextTick>,
+    mut tick_start: EventReader<TickStart>,
     mut reset: EventReader<Reset>,
-    state: Res<PlayerState>,
 ) {
     let reset = reset.read().count() != 0;
-    let ticks = next_tick.read().count();
-    for (mut grid, mut world, mut obstacle) in &mut o {
-        let dest = match obstacle.going_up {
-            true => grid.0 + UP,
-            false => grid.0 + DOWN,
-        };
-
+    let ticks = tick_start.read().count();
+    for (mut grid, mut next_grid, mut world, mut obstacle) in &mut o {
         if ticks % 2 == 1 {
+            next_grid.0 = match obstacle.going_up {
+                true => grid.0 + UP,
+                false => grid.0 + DOWN,
+            };
             obstacle.going_up = !obstacle.going_up;
-            grid.0 = dest;
         }
         if reset {
             obstacle.going_up = obstacle.spawn.going_up;
             grid.0 = obstacle.spawn.pos;
+            next_grid.0 = obstacle.spawn.pos;
         }
 
-        let pos = if state.animation.is_some() {
-            grid.0.as_vec2().lerp(dest.as_vec2(), tick.0.fraction())
-        } else {
-            grid.0.as_vec2()
-        };
+        let old = grid.0.as_vec2();
+        let new = next_grid.0.as_vec2();
+        let pos = old.lerp(new, tick.0.fraction());
         world.translation = proj.project_to_world(pos).extend(world.translation.z);
     }
 }

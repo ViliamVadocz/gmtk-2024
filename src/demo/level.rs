@@ -22,7 +22,7 @@ pub(super) fn plugin(app: &mut App) {
         origin: Vec2::splat(0.),
         size: Vec2::splat(64.),
     });
-    app.add_event::<NextTick>();
+    app.add_event::<TickStart>();
     app.add_event::<Reset>();
     app.insert_resource(AnimationTick(Timer::from_seconds(0.2, TimerMode::Once)));
     app.init_resource::<Level>();
@@ -213,15 +213,33 @@ impl WorldGrid {
 #[derive(Component)]
 pub struct GridTransform(pub IVec2);
 
+#[derive(Component)]
+pub struct NextGridTransform(pub IVec2);
+
 #[derive(Resource)]
 pub struct AnimationTick(pub Timer);
 
-pub fn update_tick_timer(time: Res<Time>, mut tick: ResMut<AnimationTick>) {
+pub fn update_tick_timer(
+    time: Res<Time>,
+    mut tick: ResMut<AnimationTick>,
+    mut q: Query<(&mut GridTransform, &NextGridTransform)>,
+    mut tick_start: EventReader<TickStart>,
+) {
+    if tick_start.read().count() != 0 {
+        tick.0.reset();
+    }
+
     tick.0.tick(time.delta());
+
+    if tick.0.just_finished() {
+        for (mut old, new) in &mut q {
+            old.0 = new.0;
+        }
+    }
 }
 
 #[derive(Event)]
-pub struct NextTick;
+pub struct TickStart;
 
 #[derive(Event)]
 pub struct Reset;

@@ -18,7 +18,7 @@ use super::{
 use crate::{
     asset_tracking::LoadResource,
     demo::{
-        level::{NextTick, Reset},
+        level::{NextGridTransform, Reset, TickStart},
         obstacle::Obstacle,
     },
     screens::{gameplay::Editor, Screen},
@@ -88,6 +88,7 @@ fn spawn_player(
             ..Default::default()
         },
         GridTransform(level.get_spawn()),
+        NextGridTransform(level.get_spawn()),
         TextureAtlas {
             layout: player_assets.idle.atlas.clone(),
             index: 0,
@@ -129,14 +130,14 @@ fn debug_actions(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Optio
 
 fn respawn(
     mut state: ResMut<PlayerState>,
-    mut player: Query<&mut GridTransform, With<Player>>,
+    mut player: Query<(&mut GridTransform, &mut NextGridTransform), With<Player>>,
     obstacles: Query<&GridTransform, (With<Obstacle>, Without<Player>)>,
     input: Res<ButtonInput<KeyCode>>,
-    level: Res<Level>,
+    mut level: ResMut<Level>,
     mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
-    mut reset: EventReader<Reset>,
+    mut reset: EventWriter<Reset>,
 ) {
-    let Ok(mut pos) = player.get_single_mut() else {
+    let Ok((mut pos, mut new_pos)) = player.get_single_mut() else {
         return;
     };
 
@@ -145,16 +146,21 @@ fn respawn(
         collided |= o_pos.0 == pos.0;
     }
 
-    let reset = reset.read().count() != 0;
+    if state.animation.is_some() && level.is_checkpoint(pos.0) && level.last_checkpoint != pos.0 {
+        level.last_checkpoint = pos.0;
+        collided = true;
+    }
 
-    if input.just_pressed(KeyCode::KeyR) || collided || reset {
+    if input.just_pressed(KeyCode::KeyR) || collided {
         // respawn, reset all properties
         pos.0 = level.last_checkpoint;
+        new_pos.0 = level.last_checkpoint;
         state.x_dir = 1;
         state.cursor = 0;
         state.animation = None;
         // allow editing again
         editor_inactive.single_mut().0 = false;
+        reset.send(Reset);
     }
 }
 
@@ -162,14 +168,13 @@ fn update_animation(
     input: Res<ButtonInput<KeyCode>>,
     mut tick: ResMut<AnimationTick>,
     mut state: ResMut<PlayerState>,
-    mut player: Query<&mut GridTransform, With<Player>>,
+    mut player: Query<(&GridTransform, &mut NextGridTransform), With<Player>>,
     assets: Option<Res<PlayerAssets>>,
-    mut level: ResMut<Level>,
+    level: Res<Level>,
     editor_inactive: Query<&TextInputInactive, With<Editor>>,
-    mut next_tick: EventWriter<NextTick>,
-    mut reset: EventWriter<Reset>,
+    mut tick_start: EventWriter<TickStart>,
 ) {
-    let Ok(mut pos) = player.get_single_mut() else {
+    let Ok((pos, mut next_pos)) = player.get_single_mut() else {
         return;
     };
 
@@ -186,15 +191,6 @@ fn update_animation(
     if !tick.0.finished() {
         return;
     }
-    if let Some(prev_anim) = state.animation.take() {
-        pos.0 += prev_anim.final_offset(state.x_dir);
-        next_tick.send(NextTick);
-
-        if level.is_checkpoint(pos.0) && level.last_checkpoint != pos.0 {
-            level.last_checkpoint = pos.0;
-            reset.send(Reset);
-        }
-    }
 
     // check if we have manual controls to execute
     if cfg!(feature = "dev") {
@@ -209,15 +205,16 @@ fn update_animation(
 
     // check if we have script to execute
     if input.pressed(KeyCode::KeyF) || state.autoplay {
-        state.animation = action_interpreter(&mut state, &pos, &level, assets.unwrap());
+        state.animation = action_interpreter(&mut state, pos, &level, assets.unwrap());
     }
 
     if let Some(animation) = &state.animation {
+        tick_start.send(TickStart);
         tick.0.set_duration(animation.duration);
+        next_pos.0 = pos.0 + animation.final_offset(state.x_dir)
     } else {
         tick.0.set_duration(Duration::from_secs_f32(0.1));
     }
-    tick.0.reset();
 }
 
 fn action_interpreter(
