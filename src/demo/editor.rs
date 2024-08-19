@@ -14,6 +14,13 @@ pub(super) fn plugin(app: &mut App) {
         Update,
         ((edit_script, show_script).chain(), submit_script).run_if(in_state(Screen::Gameplay)),
     );
+    // Send `EditorChanged` event at start.
+    app.add_systems(
+        OnEnter(Screen::Gameplay),
+        |mut ev: EventWriter<EditorChanged>| {
+            ev.send_default();
+        },
+    );
 }
 
 #[derive(Resource, Debug)]
