@@ -175,6 +175,8 @@ fn update_animation(
     }
     if let Some(prev_anim) = state.animation.take() {
         pos.0 += prev_anim.final_offset(state.x_dir);
+        next_tick.send(NextTick);
+
         if level.is_checkpoint(pos.0) {
             level.last_checkpoint = pos.0
         }
@@ -198,7 +200,6 @@ fn update_animation(
 
     if let Some(animation) = &state.animation {
         tick.0.set_duration(animation.duration);
-        next_tick.send(NextTick);
     } else {
         tick.0.set_duration(Duration::from_secs_f32(0.1));
     }

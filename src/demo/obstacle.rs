@@ -8,6 +8,7 @@ use crate::{
     demo::{
         action::{DOWN, UP},
         level::{AnimationTick, NextTick, WorldGrid},
+        player::PlayerState,
     },
     screens::Screen,
     AppSet,
@@ -69,6 +70,7 @@ fn movement(
     tick: Res<AnimationTick>,
     proj: Res<WorldGrid>,
     mut next_tick: EventReader<NextTick>,
+    state: Res<PlayerState>,
 ) {
     let ticks = next_tick.read().count();
     for (mut grid, mut world, mut obstacle) in &mut o {
@@ -82,7 +84,11 @@ fn movement(
             grid.0 = dest;
         }
 
-        let pos = grid.0.as_vec2().lerp(dest.as_vec2(), tick.0.fraction());
+        let pos = if state.animation.is_some() {
+            grid.0.as_vec2().lerp(dest.as_vec2(), tick.0.fraction())
+        } else {
+            grid.0.as_vec2()
+        };
         world.translation = proj.project_to_world(pos).extend(world.translation.z);
     }
 }
