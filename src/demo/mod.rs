@@ -7,7 +7,7 @@ use bevy::prelude::*;
 
 pub mod action;
 pub mod animation;
-mod editor;
+pub mod editor;
 pub mod level;
 mod obstacle;
 pub mod player;

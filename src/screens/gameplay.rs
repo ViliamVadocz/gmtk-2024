@@ -1,14 +1,13 @@
 //! The screen state for the main gameplay.
 
 use bevy::{prelude::*, ui::Val::*};
-use bevy_simple_text_input::{TextInputInactive, TextInputSubmitEvent};
 
 use crate::{
     asset_tracking::LoadResource,
     audio::Music,
-    demo::{action::ScriptCommand, level::spawn_level as spawn_level_command, player::PlayerState},
+    demo::{editor::EditorUI, level::spawn_level as spawn_level_command},
     screens::Screen,
-    theme::{palette::LABEL_TEXT, prelude::*},
+    theme::palette::LABEL_TEXT,
 };
 
 pub(super) fn plugin(app: &mut App) {
@@ -17,15 +16,7 @@ pub(super) fn plugin(app: &mut App) {
     app.load_resource::<GameplayMusic>();
     app.add_systems(OnEnter(Screen::Gameplay), play_gameplay_music);
     app.add_systems(OnExit(Screen::Gameplay), stop_music);
-
-    app.add_systems(
-        Update,
-        text_input_listener.run_if(in_state(Screen::Gameplay)),
-    );
 }
-
-#[derive(Component)]
-pub struct Editor;
 
 #[derive(Component)]
 pub struct AutoplayLabel;
@@ -37,7 +28,7 @@ impl AutoplayLabel {
 fn spawn_level(mut commands: Commands) {
     commands.add(spawn_level_command);
     commands
-        .spawn((Name::new("UI Root"), NodeBundle {
+        .spawn((Name::new("Gameplay UI Root"), NodeBundle {
             style: Style {
                 width: Percent(100.0),
                 height: Percent(100.0),
@@ -52,7 +43,18 @@ fn spawn_level(mut commands: Commands) {
         }))
         .insert(StateScoped(Screen::Gameplay))
         .with_children(|children| {
-            children.text_input();
+            children.spawn((Name::new("Editor UI"), EditorUI, NodeBundle {
+                style: Style {
+                    width: Percent(70.0),
+                    height: Percent(10.0),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    flex_direction: FlexDirection::Row,
+                    position_type: PositionType::Absolute,
+                    ..default()
+                },
+                ..default()
+            }));
             children
                 .spawn(NodeBundle {
                     style: Style {
@@ -113,26 +115,5 @@ fn play_gameplay_music(mut commands: Commands, mut music: ResMut<GameplayMusic>)
 fn stop_music(mut commands: Commands, mut music: ResMut<GameplayMusic>) {
     if let Some(entity) = music.entity.take() {
         commands.entity(entity).despawn_recursive();
-    }
-}
-
-fn text_input_listener(
-    mut events: EventReader<TextInputSubmitEvent>,
-    mut player_state: ResMut<PlayerState>,
-    mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
-) {
-    for event in events.read() {
-        let new_sequence: Vec<_> = event
-            .value
-            .chars()
-            .filter_map(ScriptCommand::try_from)
-            .collect();
-        if new_sequence.is_empty() {
-            continue;
-        }
-
-        editor_inactive.single_mut().0 = true;
-        player_state.sequence = new_sequence;
-        player_state.cursor = 0;
     }
 }

@@ -8,11 +8,11 @@ use bevy::{
     ecs::{system::RunSystemOnce as _, world::Command},
     prelude::*,
 };
-use bevy_simple_text_input::TextInputInactive;
 
 use super::{
     action::ScriptCommand,
     animation::{AnimationResource, PlayerAssets},
+    editor::EditorState,
     level::{AnimationTick, GridTransform, Level},
 };
 use crate::{
@@ -21,10 +21,7 @@ use crate::{
         level::{NextGridTransform, Reset, TickStart},
         obstacle::Obstacle,
     },
-    screens::{
-        gameplay::{AutoplayLabel, Editor},
-        Screen,
-    },
+    screens::{gameplay::AutoplayLabel, Screen},
     AppSet,
 };
 
@@ -137,8 +134,8 @@ fn respawn(
     obstacles: Query<&GridTransform, (With<Obstacle>, Without<Player>)>,
     input: Res<ButtonInput<KeyCode>>,
     mut level: ResMut<Level>,
-    mut editor_inactive: Query<&mut TextInputInactive, With<Editor>>,
     mut reset: EventWriter<Reset>,
+    mut editor_state: ResMut<EditorState>,
 ) {
     let Ok((mut pos, mut new_pos)) = player.get_single_mut() else {
         return;
@@ -162,7 +159,7 @@ fn respawn(
         state.cursor = 0;
         state.animation = None;
         // allow editing again
-        editor_inactive.single_mut().0 = false;
+        editor_state.enabled = true;
         reset.send(Reset);
     }
 }
@@ -174,7 +171,7 @@ fn update_animation(
     mut player: Query<(&GridTransform, &mut NextGridTransform), With<Player>>,
     assets: Option<Res<PlayerAssets>>,
     level: Res<Level>,
-    editor_inactive: Query<&TextInputInactive, With<Editor>>,
+    editor_state: Res<EditorState>,
     mut tick_start: EventWriter<TickStart>,
     mut autoplay_label: Query<&mut Text, With<AutoplayLabel>>,
 ) {
@@ -194,8 +191,8 @@ fn update_animation(
         *autoplay_label = Text::from_section(value, autoplay_label.sections[0].style.clone());
     }
 
-    // make sure that the editor is inactive before allowing any movement
-    if !editor_inactive.single().0 {
+    // make sure that the editor is disabled before allowing any movement
+    if editor_state.enabled {
         return;
     }
 

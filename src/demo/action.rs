@@ -35,20 +35,6 @@ impl ScriptCommand {
             ScriptCommand::OpenBracket => unreachable!(),
         }
     }
-
-    pub fn try_from(c: char) -> Option<Self> {
-        Some(match c.to_ascii_lowercase() {
-            'w' => ScriptCommand::Walk,
-            'c' => ScriptCommand::Climb,
-            'd' => ScriptCommand::Drop,
-            'i' => ScriptCommand::Idle,
-            't' => ScriptCommand::Turn,
-            'j' => ScriptCommand::Jump,
-            '(' => ScriptCommand::OpenBracket,
-            ')' => ScriptCommand::CloseBracket,
-            _ => return None,
-        })
-    }
 }
 
 impl Level {

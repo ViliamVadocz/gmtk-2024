@@ -3,10 +3,7 @@
 use bevy::{ecs::system::EntityCommands, prelude::*, ui::Val::*};
 use bevy_simple_text_input::{TextInputBundle, TextInputSettings};
 
-use crate::{
-    screens::gameplay::Editor,
-    theme::{interaction::InteractionPalette, palette::*},
-};
+use crate::theme::{interaction::InteractionPalette, palette::*};
 
 /// An extension trait for spawning UI widgets.
 pub trait Widgets {
@@ -102,7 +99,6 @@ impl<T: Spawn> Widgets for T {
     fn text_input(&mut self) -> EntityCommands {
         let entity = self.spawn((
             Name::new("Text Input"),
-            Editor,
             NodeBundle {
                 style: Style {
                     width: Val::Px(200.0),
