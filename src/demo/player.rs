@@ -236,7 +236,7 @@ fn update_animation(
         tick.0.set_duration(animation.duration);
         next_pos.0 = pos.0 + animation.final_offset(state.x_dir)
     } else {
-        tick.0.set_duration(Duration::from_secs_f32(0.1));
+        tick.0.set_duration(Duration::from_secs_f32(0.5));
     }
 }
 

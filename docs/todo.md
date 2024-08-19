@@ -1,11 +1,6 @@
 # TODO
 
-- checkpoints
-    - unlocks
 - progress resource
-    - text limit
-    - unlocks for actions
-    - enforce restrictions
     - saving state (browser storage, file, idk)
 - gameplay
     - speed up simulation?
@@ -17,7 +12,6 @@
     - unlock sound
     - hazard sound
 - animation / art
-    - extend drop animation
     - jump animation
     - hazards
     - checkpoint
@@ -25,7 +19,6 @@
     - background
     - font
 - UI
-    - show action cursor during play
     - textbox for "invalid input" (mismatched brackets, unknown letters)
     - main menu pretty
     - logo / icon (splash)

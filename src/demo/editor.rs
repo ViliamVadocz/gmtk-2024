@@ -331,6 +331,7 @@ fn submit_script(
     mut editor_state: ResMut<EditorState>,
     mut player_state: ResMut<PlayerState>,
     mut commands: Commands,
+    level: Res<Level>,
 ) {
     if !input.just_pressed(KeyCode::Enter) {
         return;
@@ -352,7 +353,9 @@ fn submit_script(
     // Send event to update the editor view.
     commands.add(ShowEditor::default());
 
-    // TODO: sequence checks (unlock-based stuff)
+    if new_sequence.len() > level.command_count {
+        return;
+    }
 
     editor_state.enabled = false;
     player_state.sequence = new_sequence;
