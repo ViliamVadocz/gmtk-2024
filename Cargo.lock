@@ -2108,7 +2108,6 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_ecs_ldtk",
- "bevy_ecs_tilemap",
  "bevy_simple_text_input",
  "log",
  "rand",
