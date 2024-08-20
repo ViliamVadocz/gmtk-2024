@@ -8,7 +8,7 @@ use bevy::{
 // use bevy_ecs_tilemap::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 
-use super::{animation::PlayerAssets, player::Player};
+use super::{animation::PlayerAssets, obstacle::Obstacle, player::Player};
 use crate::{
     asset_tracking::LoadResource,
     demo::{action::ScriptCommand, obstacle::SpawnObstacle},
@@ -18,6 +18,10 @@ use crate::{
 
 pub(super) fn plugin(app: &mut App) {
     app.add_plugins(LdtkPlugin);
+    app.insert_resource(LdtkSettings {
+        level_background: LevelBackground::Nonexistent,
+        ..default()
+    });
     app.load_resource::<LevelAssets>();
     app.insert_resource(LevelSelection::index(0));
     app.register_ldtk_entity::<PlayerStartBundle>("PlayerStart");
@@ -210,20 +214,13 @@ fn load_level(
             Without<Checkpoint>,
         ),
     >,
-    ldtk_project_entities: Query<&Handle<LdtkProject>>,
-    ldtk_project_assets: Res<Assets<LdtkProject>>,
     player_assets: Res<PlayerAssets>,
+    player: Query<(), With<Player>>,
+    obstacles: Query<Entity, With<Obstacle>>,
 ) {
     for level_event in level_events.read() {
-        if let LevelEvent::Spawned(level_iid) = level_event {
+        if let LevelEvent::Spawned(_level_iid) = level_event {
             log::info!("Loading level.");
-
-            let ldtk_project = ldtk_project_assets
-                .get(ldtk_project_entities.single())
-                .expect("LdtkProject should be loaded when level is spawned");
-            let _ldtk_level = ldtk_project
-                .get_raw_level_by_iid(level_iid.get())
-                .expect("spawned level should exist in project");
 
             let wall_locations = walls.iter().map(|p| IVec2::new(p.x, p.y)).collect();
             level.walls = wall_locations;
@@ -237,38 +234,50 @@ fn load_level(
                 .collect();
             level.unlocks = unlocks;
 
-            // Set player start / last checkpoint.
-            let player_start = player_start.single();
-            level.last_checkpoint = IVec2::new(player_start.x, player_start.y);
+            // Despawn previous hazards.
+            for entity in obstacles.iter() {
+                commands.entity(entity).despawn_recursive();
+            }
 
-            // TODO: Also despawn previous ones them?
             // Spawn hazards.
             for (grid_coords, move_to) in hazards.iter() {
+                const LEVEL_HEIGHT: i32 = 64; // TODO: Get this info from somewhere.
+                                              // IDK why the exported position uses a different coordinate system than the
+                                              // grid coords.
                 let pos = IVec2::new(grid_coords.x, grid_coords.y);
-                let dest = move_to.0.unwrap_or_default();
+                let dest = move_to
+                    .0
+                    .map(|p| IVec2::new(p.x, LEVEL_HEIGHT - p.y))
+                    .unwrap_or(pos);
                 let dir = dest - pos;
                 commands.add(SpawnObstacle { pos, dir });
             }
 
-            // TODO: Despawn player before?
-            // TODO: Maybe don't spawn the player here so that hot-reloading doesn't break
-            // the game.
-            commands.spawn((
-                Name::new("Player"),
-                Player,
-                SpriteBundle {
-                    texture: player_assets.texture.clone(),
-                    sprite: Sprite::default(),
-                    ..Default::default()
-                },
-                GridTransform(level.get_spawn()),
-                NextGridTransform(level.get_spawn()),
-                TextureAtlas {
-                    layout: player_assets.layout.clone(),
-                    index: 0,
-                },
-                StateScoped(Screen::Gameplay),
-            ));
+            // Spawn player and set player start only once.
+            if player.get_single().is_err() {
+                // Set player start / last checkpoint.
+                let player_start = player_start.single();
+                level.last_checkpoint = IVec2::new(player_start.x, player_start.y);
+
+                // Spawn player.
+                commands.spawn((
+                    Name::new("Player"),
+                    Player,
+                    SpriteBundle {
+                        texture: player_assets.texture.clone(),
+                        sprite: Sprite::default(),
+                        // transform: Transform::from_scale(Vec2::splat(4.0).extend(1.0)),
+                        ..Default::default()
+                    },
+                    GridTransform(level.get_spawn()),
+                    NextGridTransform(level.get_spawn()),
+                    TextureAtlas {
+                        layout: player_assets.layout.clone(),
+                        index: 0,
+                    },
+                    StateScoped(Screen::Gameplay),
+                ));
+            }
         }
     }
 }

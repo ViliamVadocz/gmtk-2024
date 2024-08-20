@@ -93,7 +93,14 @@ enum AppSet {
 fn spawn_camera(mut commands: Commands) {
     commands.spawn((
         Name::new("Camera"),
-        Camera2dBundle::default(),
+        Camera2dBundle {
+            projection: OrthographicProjection {
+                scale: 0.25,
+                ..default()
+            },
+            transform: Transform::from_translation(Vec3::new(16.0 * 15.0, 16.0 * 10.0, 100.0)),
+            ..default()
+        },
         // Render all UI to this camera.
         // Not strictly necessary since we only use one camera,
         // but if we don't use this component, our UI will disappear as soon
