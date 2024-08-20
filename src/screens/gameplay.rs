@@ -21,8 +21,8 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component)]
 pub struct AutoplayLabel;
 impl AutoplayLabel {
-    pub const DISABLED: &'static str = "Autoplay disabled (toggle G) (step F)";
-    pub const ENABLED: &'static str = "Autoplay enabled (toggle G)";
+    pub const DISABLED: &'static str = "Autoplay disabled (toggle G) (step F) (respawn R)";
+    pub const ENABLED: &'static str = "Autoplay enabled (toggle G) (fast forward F) (respawn R)";
 }
 
 #[derive(Component)]
