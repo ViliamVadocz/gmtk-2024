@@ -1873,7 +1873,7 @@
 						},
 						{
 							"__identifier": "Checkpoint",
-							"__grid": [107,41],
+							"__grid": [108,41],
 							"__pivot": [0,0],
 							"__tags": [],
 							"__tile": { "tilesetUid": 76, "x": 0, "y": 0, "w": 16, "h": 16 },
@@ -1882,7 +1882,7 @@
 							"width": 16,
 							"height": 16,
 							"defUid": 10,
-							"px": [1712,656],
+							"px": [1728,656],
 							"fieldInstances": [
 								{ "__identifier": "CommandCount", "__type": "Int", "__value": 6, "__tile": null, "defUid": 11, "realEditorValues": [{ "id": "V_Int", "params": [6] }] },
 								{ "__identifier": "Unlock", "__type": "LocalEnum.Unlock", "__value": null, "__tile": null, "defUid": 14, "realEditorValues": [] },
