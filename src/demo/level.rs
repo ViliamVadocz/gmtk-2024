@@ -54,6 +54,49 @@ struct CheckpointBundle {
     checkpoint: Checkpoint,
     #[grid_coords]
     grid_coords: GridCoords,
+    #[with(CommandCount::from_field)]
+    command_count: CommandCount,
+    #[with(Unlock::from_field)]
+    unlock: Unlock,
+}
+
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
+struct CommandCount(i32);
+
+impl CommandCount {
+    fn from_field(entity_instance: &EntityInstance) -> Self {
+        Self(
+            *entity_instance
+                .get_int_field("CommandCount")
+                .expect("expected entity to have non-nullable `CommandCount` int field"),
+        )
+    }
+}
+
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
+struct Unlock(Option<ScriptCommand>);
+
+impl Unlock {
+    fn from_field(entity_instance: &EntityInstance) -> Self {
+        Self(
+            entity_instance
+                .get_maybe_enum_field("Unlock")
+                .expect("expected entity to have nullable `Unlock` enum field")
+                .as_ref()
+                .map(|field| match field.as_ref() {
+                    "Walk" => ScriptCommand::Walk,
+                    "Climb" => ScriptCommand::Climb,
+                    "Idle" => ScriptCommand::Idle,
+                    "Jump" => ScriptCommand::Jump,
+                    "Drop" => ScriptCommand::Drop,
+                    "Turn" => ScriptCommand::Turn,
+                    "Brackets" => ScriptCommand::OpenBracket,
+                    x => panic!("unexpected `Unlock` enum variant: {x}"),
+                }),
+        )
+    }
 }
 
 #[derive(Component, Reflect, Debug, Default)]
@@ -65,11 +108,27 @@ struct HazardBundle {
     hazard: Hazard,
     #[grid_coords]
     grid_coords: GridCoords,
+    #[with(MoveTo::from_field)]
+    move_to: MoveTo,
 }
 
 #[derive(Component, Reflect, Debug, Default)]
 #[reflect(Component)]
 struct Hazard;
+
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
+struct MoveTo(Option<IVec2>);
+
+impl MoveTo {
+    fn from_field(entity_instance: &EntityInstance) -> Self {
+        Self(
+            *entity_instance
+                .get_maybe_point_field("MoveTo")
+                .expect("expected entity to have nullable `MoveTo` point field"),
+        )
+    }
+}
 
 #[derive(Default, Bundle, LdtkIntCell)]
 struct WallBundle {
@@ -134,7 +193,7 @@ fn load_level(
         ),
     >,
     checkpoints: Query<
-        &GridCoords,
+        (&GridCoords, &Unlock, &CommandCount),
         (
             With<Checkpoint>,
             Without<Wall>,
@@ -143,12 +202,12 @@ fn load_level(
         ),
     >,
     hazards: Query<
-        &GridCoords,
+        (&GridCoords, &MoveTo),
         (
             With<Hazard>,
             Without<Wall>,
             Without<PlayerStart>,
-            Without<Hazard>,
+            Without<Checkpoint>,
         ),
     >,
     ldtk_project_entities: Query<&Handle<LdtkProject>>,
@@ -169,25 +228,31 @@ fn load_level(
             let wall_locations = walls.iter().map(|p| IVec2::new(p.x, p.y)).collect();
             level.walls = wall_locations;
 
-            // TODO: Get unlocks from level file
+            // Get unlocks from level file.
             let unlocks = checkpoints
                 .iter()
-                .map(|p| (IVec2::new(p.x, p.y), (None, 0)))
+                .map(|(p, &Unlock(unlock), &CommandCount(x))| {
+                    (IVec2::new(p.x, p.y), (unlock, x.max(0) as usize))
+                })
                 .collect();
             level.unlocks = unlocks;
 
+            // Set player start / last checkpoint.
             let player_start = player_start.single();
             level.last_checkpoint = IVec2::new(player_start.x, player_start.y);
 
-            for hazard in hazards.iter() {
-                commands.add(SpawnObstacle {
-                    pos: IVec2::new(hazard.x, hazard.y),
-                    dir: IVec2::ZERO, // TODO: Get direction from level file
-                });
+            // TODO: Also despawn previous ones them?
+            // Spawn hazards.
+            for (grid_coords, move_to) in hazards.iter() {
+                let pos = IVec2::new(grid_coords.x, grid_coords.y);
+                let dest = move_to.0.unwrap_or_default();
+                let dir = dest - pos;
+                commands.add(SpawnObstacle { pos, dir });
             }
 
-            // TODO: Don't spawn the player here so that hot-reloading doesn't break the
-            // game.
+            // TODO: Despawn player before?
+            // TODO: Maybe don't spawn the player here so that hot-reloading doesn't break
+            // the game.
             commands.spawn((
                 Name::new("Player"),
                 Player,
@@ -215,16 +280,6 @@ pub struct Level {
     pub unlocked: Vec<ScriptCommand>,
     pub command_count: usize,
     pub last_checkpoint: IVec2,
-}
-
-#[derive(Reflect, Debug, Clone, Copy)]
-enum Tile {
-    Air,
-    Ground,
-    CheckPoint,
-    Down,
-    Up,
-    Static,
 }
 
 /// Temporary hardcoded level for testing.

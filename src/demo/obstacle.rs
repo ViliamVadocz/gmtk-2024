@@ -38,6 +38,7 @@ fn spawn_obstacle(
     mut commands: Commands,
     player_assets: Res<PlayerAssets>,
 ) {
+    log::info!("Hazard spawning {config:?}");
     commands.spawn((
         Name::new("Obstacle"),
         Obstacle {
@@ -46,7 +47,7 @@ fn spawn_obstacle(
         },
         SpriteBundle {
             texture: player_assets.hazard_texture.clone(),
-            transform: Transform::from_scale(Vec2::splat(4.0).extend(1.0)),
+            transform: Transform::from_scale(Vec3::splat(1.0)),
             sprite: Sprite::default(),
             ..Default::default()
         },
