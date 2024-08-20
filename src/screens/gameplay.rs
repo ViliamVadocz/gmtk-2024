@@ -62,7 +62,7 @@ fn spawn_level(mut commands: Commands) {
                         flex_direction: FlexDirection::Row,
                         ..default()
                     },
-                    background_color: BackgroundColor(Color::WHITE),
+                    background_color: BackgroundColor(Color::hsl(0., 0., 0.9)),
                     ..default()
                 },
             ));
