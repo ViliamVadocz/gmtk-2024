@@ -52,3 +52,17 @@
 - `( ( W ) J ) C T J` or `(W C T J) T`
 - going to previously taken checkpoints
 - moving the camera with the mouse
+
+# L0la
+
+- `D ( W ) J D` for downwards checkpoint
+
+- second checkpoint is "too EZ"
+- "I don't understand the mechanic"
+
+- control flow unclear
+- down is understandable - nice that they can immediately try it out
+
+- animation to turn around at the checkpoint (if facing wrong way)
+
+- `( J ) W C T` to reach up
