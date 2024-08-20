@@ -9,8 +9,10 @@ mod theme;
 use bevy::{
     asset::AssetMetaCheck,
     audio::{AudioPlugin, Volume},
+    input::mouse::MouseWheel,
     prelude::*,
 };
+use screens::Screen;
 
 pub struct AppPlugin;
 
@@ -69,6 +71,8 @@ impl Plugin for AppPlugin {
             theme::plugin,
         ));
 
+        app.add_systems(Update, camera_zoom.run_if(in_state(Screen::Gameplay)));
+
         // Enable dev tools for dev builds.
         #[cfg(feature = "dev")]
         app.add_plugins(dev_tools::plugin);
@@ -109,4 +113,26 @@ fn spawn_camera(mut commands: Commands) {
         // for debugging. So it's good to have this here for future-proofing.
         IsDefaultUiCamera,
     ));
+}
+
+fn camera_zoom(
+    mut evr_scroll: EventReader<MouseWheel>,
+    mut query: Query<&mut OrthographicProjection, With<IsDefaultUiCamera>>,
+) {
+    let Ok(mut projection) = query.get_single_mut() else {
+        return;
+    };
+
+    use bevy::input::mouse::MouseScrollUnit;
+    for ev in evr_scroll.read() {
+        let y_scroll = match ev.unit {
+            MouseScrollUnit::Line => {
+                ev.y // line units
+            }
+            MouseScrollUnit::Pixel => {
+                ev.y // pixel units
+            }
+        };
+        projection.scale = (projection.scale - y_scroll / 100.0).clamp(0.1, 1.0)
+    }
 }
