@@ -62,6 +62,8 @@ struct CheckpointBundle {
     command_count: CommandCount,
     #[with(Unlock::from_field)]
     unlock: Unlock,
+    #[sprite_sheet_bundle]
+    sprite_sheet_bundle: LdtkSpriteSheetBundle,
 }
 
 #[derive(Component, Reflect, Debug, Default)]
