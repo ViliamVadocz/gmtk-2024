@@ -249,12 +249,13 @@ fn update_animation(
     if let Some(animation) = &state.animation {
         tick_start.send(TickStart);
         tick.0.set_duration(animation.duration.mul_f32(multiplier));
-        next_pos.0 = pos.0 + animation.final_offset(state.x_dir)
-    } else {
+        next_pos.0 = pos.0 + animation.final_offset(state.x_dir);
+        tick.0.reset();
+    } else if state.autoplay {
         tick.0
             .set_duration(Duration::from_secs_f32(0.25).mul_f32(multiplier));
+        tick.0.reset();
     }
-    tick.0.reset();
 }
 
 /// Returns the index of the script item that should be highlighted and maybe

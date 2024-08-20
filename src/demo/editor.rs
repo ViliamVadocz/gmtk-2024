@@ -378,6 +378,10 @@ fn submit_script(
         return;
     }
 
+    // don't highlight anything initially
+    commands.add(ShowEditor {
+        active: Some((usize::MAX, true)),
+    });
     editor_state.enabled = false;
     player_state.sequence = new_sequence;
     player_state.cursor = 0;
