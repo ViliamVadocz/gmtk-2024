@@ -164,7 +164,6 @@ impl FromWorld for LevelAssets {
     }
 }
 
-/// A [`Command`] to spawn the level.
 pub fn spawn_level(world: &mut World) {
     world.run_system_once(|mut commands: Commands, level_assets: Res<LevelAssets>| {
         commands.spawn(LdtkWorldBundle {
