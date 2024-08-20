@@ -26,6 +26,7 @@ fn spawn_credits_screen(mut commands: Commands) {
             children.header("Level design");
             children.label("Will and Hytak");
 
+            children.header("Other");
             children.label(
                 "Bevy logo - All rights reserved by the Bevy Foundation. Permission granted for \
                  splash screen use when unmodified.",
