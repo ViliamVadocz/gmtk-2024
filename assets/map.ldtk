@@ -786,7 +786,7 @@
 			"fillOpacity": 1,
 			"lineOpacity": 1,
 			"hollow": false,
-			"color": "#63C74D",
+			"color": "#FEAE34",
 			"renderMode": "Rectangle",
 			"showName": true,
 			"tilesetId": null,
@@ -1045,13 +1045,13 @@
 			}
 		},
 		{
-			"__cWid": 1,
+			"__cWid": 9,
 			"__cHei": 1,
 			"identifier": "Checkpoint",
 			"uid": 76,
 			"relPath": "images/checkpoint.png",
 			"embedAtlas": null,
-			"pxWid": 16,
+			"pxWid": 144,
 			"pxHei": 16,
 			"tileGridSize": 16,
 			"spacing": 0,
@@ -1061,7 +1061,7 @@
 			"enumTags": [],
 			"customData": [],
 			"savedSelections": [],
-			"cachedPixelData": { "opaqueTiles": "1", "averageColors": "f2a3" }
+			"cachedPixelData": { "opaqueTiles": "000000000", "averageColors": "738273827382738273827382738273827382" }
 		}
 	], "enums": [{ "identifier": "Unlock", "uid": 12, "values": [
 		{ "id": "Walk", "tileRect": null, "color": 12470831 },
@@ -1124,7 +1124,7 @@
 							"__pivot": [0,0],
 							"__tags": [],
 							"__tile": null,
-							"__smartColor": "#63C74D",
+							"__smartColor": "#FEAE34",
 							"iid": "2356b960-4ce0-11ef-a3b7-bfe47c854470",
 							"width": 16,
 							"height": 16,
