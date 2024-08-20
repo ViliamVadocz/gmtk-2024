@@ -23,6 +23,7 @@ use crate::{
         obstacle::Obstacle,
     },
     screens::gameplay::{AutoplayLabel, UnlockedList},
+    theme::palette::LABEL_TEXT,
     AppSet,
 };
 
@@ -201,11 +202,24 @@ fn update_animation(
         let mut autoplay_label = autoplay_label.single_mut();
 
         state.autoplay = !state.autoplay;
-        let value = match state.autoplay {
-            true => AutoplayLabel::ENABLED,
-            false => AutoplayLabel::DISABLED,
+        let default_style = TextStyle {
+            font_size: 24.0,
+            color: LABEL_TEXT,
+            ..Default::default()
         };
-        *autoplay_label = Text::from_section(value, autoplay_label.sections[0].style.clone());
+        let big_style = TextStyle {
+            font_size: 48.0,
+            color: LABEL_TEXT,
+            ..Default::default()
+        };
+        *autoplay_label = match state.autoplay {
+            true => Text::from_section(AutoplayLabel::ENABLED, default_style).with_no_wrap(),
+            false => Text::from_sections([
+                TextSection::new(AutoplayLabel::DISABLED_BIG, big_style),
+                TextSection::new(AutoplayLabel::DISABLED, default_style),
+            ])
+            .with_no_wrap(),
+        };
     }
 
     // make sure that the editor is disabled before allowing any movement

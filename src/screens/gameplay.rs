@@ -21,8 +21,9 @@ pub(super) fn plugin(app: &mut App) {
 #[derive(Component)]
 pub struct AutoplayLabel;
 impl AutoplayLabel {
-    pub const DISABLED: &'static str = "Autoplay disabled (toggle G) (step F) (respawn R)";
-    pub const ENABLED: &'static str = "Autoplay enabled (toggle G) (fast forward F) (respawn R)";
+    pub const DISABLED_BIG: &'static str = "MANUAL MODE";
+    pub const DISABLED: &'static str = " (step F) (autoplay G) (respawn R)";
+    pub const ENABLED: &'static str = "autoplay enabled (fast forward F) (manual G) (respawn R)";
 }
 
 #[derive(Component)]
@@ -31,33 +32,40 @@ pub struct UnlockedList;
 fn spawn_level(mut commands: Commands) {
     commands.add(spawn_level_command);
     commands
-        .spawn((Name::new("Gameplay UI Root"), NodeBundle {
-            style: Style {
-                width: Percent(100.0),
-                height: Percent(100.0),
-                justify_content: JustifyContent::Start,
-                align_items: AlignItems::Center,
-                flex_direction: FlexDirection::Column,
-                row_gap: Px(10.0),
-                position_type: PositionType::Absolute,
-                ..default()
-            },
-            ..default()
-        }))
-        .insert(StateScoped(Screen::Gameplay))
-        .with_children(|children| {
-            children.spawn((Name::new("Editor UI"), EditorUI, NodeBundle {
+        .spawn((
+            Name::new("Gameplay UI Root"),
+            NodeBundle {
                 style: Style {
-                    width: Auto,
-                    height: Percent(10.0),
-                    justify_content: JustifyContent::Center,
+                    width: Percent(100.0),
+                    height: Percent(100.0),
+                    justify_content: JustifyContent::Start,
                     align_items: AlignItems::Center,
-                    flex_direction: FlexDirection::Row,
+                    flex_direction: FlexDirection::Column,
+                    row_gap: Px(10.0),
+                    position_type: PositionType::Absolute,
                     ..default()
                 },
-                background_color: BackgroundColor(Color::WHITE),
                 ..default()
-            }));
+            },
+        ))
+        .insert(StateScoped(Screen::Gameplay))
+        .with_children(|children| {
+            children.spawn((
+                Name::new("Editor UI"),
+                EditorUI,
+                NodeBundle {
+                    style: Style {
+                        width: Auto,
+                        height: Percent(10.0),
+                        justify_content: JustifyContent::Center,
+                        align_items: AlignItems::Center,
+                        flex_direction: FlexDirection::Row,
+                        ..default()
+                    },
+                    background_color: BackgroundColor(Color::WHITE),
+                    ..default()
+                },
+            ));
             children
                 .spawn(NodeBundle {
                     style: Style {
@@ -86,23 +94,31 @@ fn spawn_level(mut commands: Commands) {
                         .with_children(|children| {
                             children.spawn((
                                 AutoplayLabel,
-                                TextBundle::from_section(AutoplayLabel::ENABLED, TextStyle {
-                                    font_size: 24.0,
-                                    color: LABEL_TEXT,
-                                    ..default()
-                                }),
+                                TextBundle::from_section(
+                                    AutoplayLabel::ENABLED,
+                                    TextStyle {
+                                        font_size: 24.0,
+                                        color: LABEL_TEXT,
+                                        ..default()
+                                    },
+                                )
+                                .with_no_wrap(),
                             ));
-                            children.spawn((Name::new("Editor UI"), UnlockedList, NodeBundle {
-                                style: Style {
-                                    width: Percent(100.0),
-                                    height: Percent(100.0),
-                                    justify_content: JustifyContent::End,
-                                    align_items: AlignItems::End,
-                                    flex_direction: FlexDirection::Row,
+                            children.spawn((
+                                Name::new("Editor UI"),
+                                UnlockedList,
+                                NodeBundle {
+                                    style: Style {
+                                        width: Percent(100.0),
+                                        height: Percent(100.0),
+                                        justify_content: JustifyContent::End,
+                                        align_items: AlignItems::End,
+                                        flex_direction: FlexDirection::Row,
+                                        ..default()
+                                    },
                                     ..default()
                                 },
-                                ..default()
-                            }));
+                            ));
                         });
                 });
         });
