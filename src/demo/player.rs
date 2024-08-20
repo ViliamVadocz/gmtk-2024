@@ -22,10 +22,7 @@ use crate::{
         level::{NextGridTransform, Reset, TickStart},
         obstacle::Obstacle,
     },
-    screens::{
-        gameplay::{AutoplayLabel, UnlockedList},
-        Screen,
-    },
+    screens::gameplay::{AutoplayLabel, UnlockedList},
     AppSet,
 };
 
@@ -55,16 +52,6 @@ pub(super) fn plugin(app: &mut App) {
 #[reflect(Component)]
 pub struct Player;
 
-/// A command to spawn the player character.
-#[derive(Debug)]
-pub struct SpawnPlayer;
-
-impl Command for SpawnPlayer {
-    fn apply(self, world: &mut World) {
-        world.run_system_once_with(self, spawn_player);
-    }
-}
-
 #[derive(Resource)]
 pub struct PlayerState {
     // can be 1 or -1
@@ -74,31 +61,6 @@ pub struct PlayerState {
     pub sequence: Vec<ScriptCommand>,
     pub cursor: usize,
     pub autoplay: bool,
-}
-
-fn spawn_player(
-    In(_config): In<SpawnPlayer>,
-    mut commands: Commands,
-    player_assets: Res<PlayerAssets>,
-    level: Res<Level>,
-) {
-    commands.spawn((
-        Name::new("Player"),
-        Player,
-        SpriteBundle {
-            texture: player_assets.texture.clone(),
-            transform: Transform::from_scale(Vec2::splat(4.0).extend(1.0)),
-            sprite: Sprite::default(),
-            ..Default::default()
-        },
-        GridTransform(level.get_spawn()),
-        NextGridTransform(level.get_spawn()),
-        TextureAtlas {
-            layout: player_assets.layout.clone(),
-            index: 0,
-        },
-        StateScoped(Screen::Gameplay),
-    ));
 }
 
 fn debug_actions(input: &ButtonInput<KeyCode>, state: &mut PlayerState) -> Option<ScriptCommand> {
@@ -190,14 +152,16 @@ fn respawn(
     if level.is_checkpoint(pos.0) && level.last_checkpoint != pos.0 {
         level.last_checkpoint = pos.0;
 
-        let (new_unlock, new_count) = *level.unlocks.get(&pos.0).expect("unknown checkpoint");
-        if !level.unlocked.contains(&new_unlock) {
-            level.unlocked.push(new_unlock);
-            commands.add(AddUnlockedCommand {
-                command: new_unlock,
-            });
+        let (new_unlock, command_count) = *level.unlocks.get(&pos.0).expect("unknown checkpoint");
+        if let Some(script_command) = new_unlock {
+            if !level.unlocked.contains(&script_command) {
+                level.unlocked.push(script_command);
+                commands.add(AddUnlockedCommand {
+                    command: script_command,
+                });
+            }
         }
-        level.command_count = level.command_count.max(new_count);
+        level.command_count = level.command_count.max(command_count);
 
         collided = true;
     }

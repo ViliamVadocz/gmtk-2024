@@ -1,144 +1,217 @@
 //! Spawn the main level.
 
 use bevy::{
-    ecs::{system::RunSystemOnce, world::Command},
+    ecs::system::RunSystemOnce,
     prelude::*,
-    render::texture::{ImageLoaderSettings, ImageSampler},
-    utils::HashMap,
+    utils::{HashMap, HashSet},
 };
-use bevy_ecs_tilemap::prelude::*;
+// use bevy_ecs_tilemap::prelude::*;
+use bevy_ecs_ldtk::prelude::*;
 
+use super::{animation::PlayerAssets, player::Player};
 use crate::{
     asset_tracking::LoadResource,
-    demo::{
-        action::{ScriptCommand, DOWN, UP},
-        obstacle::SpawnObstacle,
-        player::SpawnPlayer,
-    },
+    demo::{action::ScriptCommand, obstacle::SpawnObstacle},
+    screens::Screen,
     AppSet,
 };
 
 pub(super) fn plugin(app: &mut App) {
-    // No setup required for this plugin.
-    // It's still good to have a function here so that we can add some setup
-    // later if needed.
-    app.add_systems(Update, update_tick_timer.in_set(AppSet::TickTimers));
+    app.add_plugins(LdtkPlugin);
+    app.load_resource::<LevelAssets>();
+    app.insert_resource(LevelSelection::index(0));
+    app.register_ldtk_entity::<PlayerStartBundle>("PlayerStart");
+    app.register_ldtk_entity::<CheckpointBundle>("Checkpoint");
+    app.register_ldtk_entity::<HazardBundle>("Hazard");
+    app.register_ldtk_int_cell::<WallBundle>(1);
+    app.add_systems(Update, load_level.run_if(in_state(Screen::Gameplay)));
+
     app.insert_resource(WorldGrid {
-        origin: Vec2::splat(0.),
-        size: Vec2::splat(64.),
+        origin: Vec2::splat(8.),
+        size: Vec2::splat(16.),
     });
+    app.init_resource::<Level>();
+    app.insert_resource(AnimationTick(Timer::from_seconds(0.2, TimerMode::Once)));
+
     app.add_event::<TickStart>();
     app.add_event::<Reset>();
-    app.insert_resource(AnimationTick(Timer::from_seconds(0.2, TimerMode::Once)));
-    app.init_resource::<Level>();
-    app.load_resource::<LevelAssets>();
+    app.add_systems(Update, update_tick_timer.in_set(AppSet::TickTimers));
 }
+
+#[derive(Default, Bundle, LdtkEntity)]
+struct PlayerStartBundle {
+    player_start: PlayerStart,
+    #[grid_coords]
+    grid_coords: GridCoords,
+}
+
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
+struct PlayerStart;
+
+#[derive(Default, Bundle, LdtkEntity)]
+struct CheckpointBundle {
+    checkpoint: Checkpoint,
+    #[grid_coords]
+    grid_coords: GridCoords,
+}
+
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
+struct Checkpoint;
+
+#[derive(Default, Bundle, LdtkEntity)]
+struct HazardBundle {
+    hazard: Hazard,
+    #[grid_coords]
+    grid_coords: GridCoords,
+}
+
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
+struct Hazard;
+
+#[derive(Default, Bundle, LdtkIntCell)]
+struct WallBundle {
+    wall: Wall,
+}
+
+#[derive(Component, Reflect, Debug, Default)]
+#[reflect(Component)]
+struct Wall;
 
 #[derive(Resource, Asset, Reflect, Clone)]
 pub struct LevelAssets {
     #[dependency]
-    pub tiles: Handle<Image>,
+    pub ldtk_project: Handle<LdtkProject>,
 }
 
 impl LevelAssets {
-    pub const PATH_TILES: &'static str = "images/tiles.png";
+    pub const PATH_LDTK: &'static str = "map.ldtk";
 }
 
 impl FromWorld for LevelAssets {
     fn from_world(world: &mut World) -> Self {
         let assets = world.resource::<AssetServer>();
         Self {
-            tiles: assets.load_with_settings(
-                LevelAssets::PATH_TILES,
-                |settings: &mut ImageLoaderSettings| {
-                    settings.sampler = ImageSampler::nearest();
-                },
-            ),
+            ldtk_project: assets.load(LevelAssets::PATH_LDTK),
         }
     }
 }
 
 /// A [`Command`] to spawn the level.
 pub fn spawn_level(world: &mut World) {
-    world.run_system_once(
-        |mut commands: Commands,
-         world_grid: Res<WorldGrid>,
-         level_assets: Res<LevelAssets>,
-         level: Res<Level>| {
-            let WorldGrid { origin, size } = *world_grid;
-            let texture_handle = level_assets.tiles.clone();
+    world.run_system_once(|mut commands: Commands, level_assets: Res<LevelAssets>| {
+        commands.spawn(LdtkWorldBundle {
+            ldtk_handle: level_assets.ldtk_project.clone(),
+            ..Default::default()
+        });
+    });
+}
 
-            // https://github.com/StarArawn/bevy_ecs_tilemap/blob/main/examples/game_of_life.rs
-            let map_size = TilemapSize {
-                x: level.row_size as u32,
-                y: (level.terrain.len() / level.row_size) as u32,
-            };
-            let mut tile_storage = TileStorage::empty(map_size);
-            let tilemap_entity = commands.spawn_empty().id();
+// System that checks level spawn and loads the relevant info.
+fn load_level(
+    mut commands: Commands,
+    mut level: ResMut<Level>,
 
-            for (i, &tile) in level.terrain.iter().enumerate() {
-                let x = (i % level.row_size) as u32;
-                let y = map_size.y - 1 - (i / level.row_size) as u32;
-                let tile_pos = TilePos { x, y };
+    mut level_events: EventReader<LevelEvent>,
+    walls: Query<
+        &GridCoords,
+        (
+            With<Wall>,
+            Without<PlayerStart>,
+            Without<Checkpoint>,
+            Without<Hazard>,
+        ),
+    >,
+    player_start: Query<
+        &GridCoords,
+        (
+            With<PlayerStart>,
+            Without<Wall>,
+            Without<Checkpoint>,
+            Without<Hazard>,
+        ),
+    >,
+    checkpoints: Query<
+        &GridCoords,
+        (
+            With<Checkpoint>,
+            Without<Wall>,
+            Without<PlayerStart>,
+            Without<Hazard>,
+        ),
+    >,
+    hazards: Query<
+        &GridCoords,
+        (
+            With<Hazard>,
+            Without<Wall>,
+            Without<PlayerStart>,
+            Without<Hazard>,
+        ),
+    >,
+    ldtk_project_entities: Query<&Handle<LdtkProject>>,
+    ldtk_project_assets: Res<Assets<LdtkProject>>,
+    player_assets: Res<PlayerAssets>,
+) {
+    for level_event in level_events.read() {
+        if let LevelEvent::Spawned(level_iid) = level_event {
+            log::info!("Loading level.");
 
-                let texture_index = match tile {
-                    Tile::CheckPoint => 1,
-                    _ => 0,
-                };
-                let obstacle = match tile {
-                    Tile::Down => Some(DOWN),
-                    Tile::Up => Some(UP),
-                    Tile::Static => Some(IVec2::ZERO),
-                    _ => None,
-                };
-                if let Some(dir) = obstacle {
-                    commands.add(SpawnObstacle {
-                        pos: IVec2::new(x as i32, y as i32),
-                        dir,
-                    });
-                }
-                let tile_entity = commands
-                    .spawn(TileBundle {
-                        position: tile_pos,
-                        tilemap_id: TilemapId(tilemap_entity),
-                        visible: TileVisible(matches!(tile, Tile::CheckPoint | Tile::Ground)),
-                        texture_index: TileTextureIndex(texture_index),
-                        ..Default::default()
-                    })
-                    .id();
-                tile_storage.set(&tile_pos, tile_entity);
+            let ldtk_project = ldtk_project_assets
+                .get(ldtk_project_entities.single())
+                .expect("LdtkProject should be loaded when level is spawned");
+            let _ldtk_level = ldtk_project
+                .get_raw_level_by_iid(level_iid.get())
+                .expect("spawned level should exist in project");
+
+            let wall_locations = walls.iter().map(|p| IVec2::new(p.x, p.y)).collect();
+            level.walls = wall_locations;
+
+            // TODO: Get unlocks from level file
+            let unlocks = checkpoints
+                .iter()
+                .map(|p| (IVec2::new(p.x, p.y), (None, 0)))
+                .collect();
+            level.unlocks = unlocks;
+
+            let player_start = player_start.single();
+            level.last_checkpoint = IVec2::new(player_start.x, player_start.y);
+
+            for hazard in hazards.iter() {
+                commands.add(SpawnObstacle {
+                    pos: IVec2::new(hazard.x, hazard.y),
+                    dir: IVec2::ZERO, // TODO: Get direction from level file
+                });
             }
 
-            let tile_size = TilemapTileSize { x: 16.0, y: 16.0 };
-            let grid_size = tile_size.into();
-            let map_type = TilemapType::Square;
-
-            commands.entity(tilemap_entity).insert(TilemapBundle {
-                grid_size,
-                map_type,
-                size: map_size,
-                storage: tile_storage,
-                texture: TilemapTexture::Single(texture_handle),
-                tile_size,
-                transform: Transform::from_scale(Vec3::new(
-                    size.x / tile_size.x,
-                    size.y / tile_size.y,
-                    1.0,
-                ))
-                .with_translation(origin.extend(-1.0)),
-                ..Default::default()
-            });
-        },
-    );
-
-    SpawnPlayer.apply(world);
+            // TODO: Don't spawn the player here so that hot-reloading doesn't break the
+            // game.
+            commands.spawn((
+                Name::new("Player"),
+                Player,
+                SpriteBundle {
+                    texture: player_assets.texture.clone(),
+                    sprite: Sprite::default(),
+                    ..Default::default()
+                },
+                GridTransform(level.get_spawn()),
+                NextGridTransform(level.get_spawn()),
+                TextureAtlas {
+                    layout: player_assets.layout.clone(),
+                    index: 0,
+                },
+                StateScoped(Screen::Gameplay),
+            ));
+        }
+    }
 }
 
 #[derive(Resource, Debug)]
 pub struct Level {
-    terrain: Vec<Tile>,
-    row_size: usize,
-    pub unlocks: HashMap<IVec2, (ScriptCommand, usize)>,
+    walls: HashSet<IVec2>,
+    pub unlocks: HashMap<IVec2, (Option<ScriptCommand>, usize)>,
     pub unlocked: Vec<ScriptCommand>,
     pub command_count: usize,
     pub last_checkpoint: IVec2,
@@ -157,47 +230,14 @@ enum Tile {
 /// Temporary hardcoded level for testing.
 impl Default for Level {
     fn default() -> Self {
-        let o = Tile::Air;
-        let x = Tile::Ground;
-        let i = Tile::CheckPoint;
-        let d = Tile::Down;
-        let u = Tile::Up;
-        let s = Tile::Static;
-        #[rustfmt::skip]
-        let terrain = vec![
-            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,i,o,o,o,o,o,o,s,o,o,o,
-            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,o,o,x,x,o,o,o,o,o,o,x,o,o,o,
-            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,x,x,o,o,o,o,x,o,o,s,o,o,
-            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,x,x,x,x,x,o,o,o,o,x,o,o,
-            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,i,o,o,o,x,o,o,o,o,o,o,o,o,o,o,o,o,s,o,x,o,o,o,o,
-            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,o,i,
-            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,x,x,o,o,i,o,x,x,x,x,x,
-            o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,o,x,x,x,x,x,x,x,x,
-            o,o,o,o,o,o,o,o,o,o,d,o,o,o,o,o,o,o,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,
-            o,o,o,o,o,o,i,o,u,o,o,o,u,o,i,o,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
-            o,o,o,i,o,x,x,x,x,x,x,x,x,x,x,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,o,i,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
-            x,x,x,x,x,x,o,o,o,o,o,o,o,o,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,x,
-        ];
-
         Self {
-            terrain,
-            row_size: 48,
-            last_checkpoint: IVec2::new(0, 1),
-            unlocks: vec![
-                (IVec2::new(3, 1), (ScriptCommand::Climb, 2)),
-                (IVec2::new(6, 2), (ScriptCommand::Idle, 3)),
-                (IVec2::new(6, 2), (ScriptCommand::Idle, 3)),
-                (IVec2::new(14, 2), (ScriptCommand::Jump, 4)),
-                (IVec2::new(24, 7), (ScriptCommand::OpenBracket, 5)),
-                (IVec2::new(37, 11), (ScriptCommand::Drop, 6)),
-                (IVec2::new(47, 6), (ScriptCommand::Turn, 7)),
-                (IVec2::new(41, 5), (ScriptCommand::Turn, 8)),
-                (IVec2::new(32, 1), (ScriptCommand::Turn, 9)),
-            ]
-            .into_iter()
-            .collect(),
-            command_count: 1,
+            // These will be set on level load.
+            walls: HashSet::default(),
+            unlocks: HashMap::default(),
+            last_checkpoint: IVec2::default(),
+            // Start with just `Walk` and 1 command count.
             unlocked: vec![ScriptCommand::Walk],
+            command_count: 1,
         }
     }
 }
@@ -205,27 +245,12 @@ impl Default for Level {
 impl Level {
     /// Check whether the position is solid terrain.
     pub fn is_solid(&self, pos: IVec2) -> bool {
-        self.get_terrain(pos)
-            .map(|x| matches!(x, Tile::Ground))
-            .unwrap_or_default()
+        self.walls.contains(&pos)
     }
 
     /// Check whether the position is a checkpoint.
     pub fn is_checkpoint(&self, pos: IVec2) -> bool {
-        self.get_terrain(pos)
-            .map(|x| matches!(x, Tile::CheckPoint))
-            .unwrap_or_default()
-    }
-
-    fn height(&self) -> usize {
-        self.terrain.len() / self.row_size
-    }
-
-    fn get_terrain(&self, pos: IVec2) -> Option<Tile> {
-        let y = usize::try_from(self.height() as i32 - 1 - pos.y).ok()?;
-        self.terrain
-            .get(self.row_size * y + usize::try_from(pos.x).ok()?)
-            .copied()
+        self.unlocks.contains_key(&pos)
     }
 
     pub fn get_spawn(&self) -> IVec2 {

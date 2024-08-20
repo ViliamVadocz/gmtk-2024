@@ -11,7 +11,6 @@ use bevy::{
     audio::{AudioPlugin, Volume},
     prelude::*,
 };
-use bevy_ecs_tilemap::TilemapPlugin;
 
 pub struct AppPlugin;
 
@@ -61,9 +60,6 @@ impl Plugin for AppPlugin {
                     ..default()
                 }),
         );
-
-        // External plugins from dependencies.
-        app.add_plugins(TilemapPlugin);
 
         // Add other plugins.
         app.add_plugins((

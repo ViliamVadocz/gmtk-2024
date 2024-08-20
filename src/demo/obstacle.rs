@@ -14,10 +14,6 @@ pub(super) fn plugin(app: &mut App) {
     app.add_systems(Update, movement.in_set(AppSet::Update));
 }
 
-#[derive(Component, Debug, Clone, Copy, PartialEq, Eq, Default, Reflect)]
-#[reflect(Component)]
-pub struct Player;
-
 /// A command to spawn the player character.
 #[derive(Debug, Clone)]
 pub struct SpawnObstacle {
