@@ -249,7 +249,7 @@ fn load_level(
                 let pos = IVec2::new(grid_coords.x, grid_coords.y);
                 let dest = move_to
                     .0
-                    .map(|p| IVec2::new(p.x, LEVEL_HEIGHT - p.y))
+                    .map(|p| IVec2::new(p.x, LEVEL_HEIGHT - 1 - p.y))
                     .unwrap_or(pos);
                 let dir = dest - pos;
                 commands.add(SpawnObstacle { pos, dir });
