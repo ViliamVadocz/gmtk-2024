@@ -127,12 +127,12 @@ fn camera_zoom(
     for ev in evr_scroll.read() {
         let y_scroll = match ev.unit {
             MouseScrollUnit::Line => {
-                ev.y // line units
+                ev.y / 200.0 // line units
             }
             MouseScrollUnit::Pixel => {
-                ev.y // pixel units
+                ev.y / 2000.0 // pixel units
             }
         };
-        projection.scale = (projection.scale - y_scroll / 100.0).clamp(0.1, 1.0)
+        projection.scale = (projection.scale - y_scroll).clamp(0.1, 1.0)
     }
 }
